@@ -366,7 +366,7 @@
     </button>
 
     <div class="admin-link">
-      <a href="admin_local.html">🔧 Админская панель</a>
+      <a href="admin.html">🔧 Админская панель</a>
     </div>
   </div>
 
@@ -654,9 +654,9 @@
       
       const user = users.find(u => u.userId === selectedUserId);
       if (user && user.role === 'admin') {
-        window.location.href = 'admin_local.html';
+        window.location.href = 'admin.html';
       } else {
-        window.location.href = 'index_local.html?userId=' + selectedUserId;
+        window.location.href = 'dashboard.html?userId=' + selectedUserId;
       }
     }
 
