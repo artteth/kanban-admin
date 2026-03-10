@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#667eea" />
-  <title>Kanban v2 - Локальная доска</title>
+  <title>Kanban v2 - Google Sheets</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -14,7 +14,7 @@
       padding: 16px;
     }
     .app { max-width: 1200px; margin: 0 auto; }
-    
+
     /* Header */
     .app-header {
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -32,7 +32,7 @@
     .app-title { font-size: 24px; font-weight: 600; }
     .user-badge { font-size: 13px; opacity: 0.9; }
     .header-right { display: flex; gap: 8px; align-items: center; }
-    
+
     .btn {
       padding: 10px 16px;
       border-radius: 10px;
@@ -52,6 +52,19 @@
       color: white;
     }
     .btn-success:hover { filter: brightness(1.1); }
+    .btn-success:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Loading & Status */
+    .sync-status {
+      font-size: 12px;
+      opacity: 0.9;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .sync-status.syncing { color: #ffeb3b; }
+    .sync-status.ready { color: #4caf50; }
+    .sync-status.error { color: #ff5252; }
     
     /* Settings */
     .settings-container {
@@ -645,7 +658,9 @@
         <div class="user-badge" id="userBadge">👤 Загрузка...</div>
       </div>
       <div class="header-right">
+        <span class="sync-status" id="syncStatus">🔄 Синхронизация...</span>
         <a href="select_user.html" class="btn btn-light">🔄 Сменить</a>
+        <button class="btn btn-light" onclick="loadTasks()" title="Обновить">🔄</button>
         <div class="settings-container">
           <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">⚙️</button>
           <div class="settings-dropdown" id="settingsDropdown">
@@ -757,10 +772,19 @@
   </div>
 
   <script>
-    // ===== LOCAL STORAGE API =====
-    const USERS_KEY = 'kanban_v2_users_local';
-    const TASKS_KEY = 'kanban_v2_tasks_local';
-    const CURRENT_USER_KEY = 'kanban_current_user_v2_local';
+    // ===== GOOGLE SHEETS API CONFIGURATION =====
+    // TODO: Replace with your Google Apps Script Web App URL
+    const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    
+    const CURRENT_USER_KEY = 'kanban_current_user_v2';
+
+    // Sync status management
+    function setSyncStatus(status, message) {
+      const el = document.getElementById('syncStatus');
+      if (!el) return;
+      el.className = 'sync-status ' + status;
+      el.textContent = message;
+    }
 
     function getTodayStr() {
       const now = new Date();
@@ -991,63 +1015,90 @@
       }
     });
 
-    // ===== LocalStorage API =====
-    function getUsers() {
-      return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-    }
-
-    function getTasks(userId = null) {
-      const all = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
-      if (userId === 'admin') return all;
-      if (userId) return all.filter(t => t.assignedTo === userId);
-      return all;
-    }
-
-    function saveTasks(tasks) {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
-    }
-
-    function addTask(title, plannedDate, assignedTo) {
-      const tasks = getTasks();
-      const task = {
-        id: generateId(),
-        title,
-        status: 'todo',
-        startDate: getTodayStr(),
-        endDate: '',
-        duration: '',
-        plannedDate: plannedDate || '',
-        assignedTo
-      };
-      tasks.push(task);
-      saveTasks(tasks);
-      return getTasks('admin');
-    }
-
-    function updateTaskStatus(taskId, newStatus) {
-      const tasks = getTasks();
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return getTasks('admin');
-      
-      task.status = newStatus;
-      
-      if (newStatus === 'done') {
-        task.endDate = getTodayStr();
-        const startDate = task.startDate ? new Date(task.startDate) : new Date();
-        const diffTime = Math.abs(new Date() - startDate);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        task.duration = diffDays + ' дн.';
+    // ===== GOOGLE SHEETS API =====
+    async function apiCall(action, payload = {}) {
+      setSyncStatus('syncing', '🔄 Синхронизация...');
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, _tgApiMode: true })
+        });
+        const result = await response.json();
+        if (result.ok) {
+          setSyncStatus('ready', '✅ Синхронизировано');
+          setTimeout(() => setSyncStatus('ready', ''), 3000);
+        } else {
+          setSyncStatus('error', '❌ Ошибка: ' + (result.error || 'Неизвестная'));
+        }
+        return result;
+      } catch (e) {
+        setSyncStatus('error', '❌ Ошибка сети');
+        console.error('API call error:', e);
+        throw e;
       }
-      
-      saveTasks(tasks);
-      return getTasks('admin');
     }
 
-    function deleteTask(taskId) {
-      const tasks = getTasks();
-      const filtered = tasks.filter(t => t.id !== taskId);
-      saveTasks(filtered);
-      return getTasks('admin');
+    async function getUsers() {
+      try {
+        const response = await fetch(API_URL + '?mode=tg-api&action=getUsers');
+        const result = await response.json();
+        return result.ok ? (result.data || []) : [];
+      } catch (e) {
+        console.error('getUsers error:', e);
+        return [];
+      }
+    }
+
+    async function getTasks(userId = null) {
+      try {
+        const payload = { action: 'getTasks' };
+        if (userId && userId !== 'admin') {
+          payload.userId = userId;
+        }
+        const result = await apiCall('getTasks', payload);
+        return result.ok ? (result.data || []) : [];
+      } catch (e) {
+        console.error('getTasks error:', e);
+        return [];
+      }
+    }
+
+    async function addTask(title, plannedDate, assignedTo) {
+      try {
+        const result = await apiCall('addTask', {
+          title: title,
+          plannedDate: plannedDate || '',
+          assignedTo: assignedTo
+        });
+        return result;
+      } catch (e) {
+        console.error('addTask error:', e);
+        throw e;
+      }
+    }
+
+    async function updateTaskStatus(taskId, newStatus) {
+      try {
+        const result = await apiCall('updateStatus', {
+          id: taskId,
+          status: newStatus
+        });
+        return result;
+      } catch (e) {
+        console.error('updateTaskStatus error:', e);
+        throw e;
+      }
+    }
+
+    async function deleteTask(taskId) {
+      try {
+        const result = await apiCall('deleteTask', { id: taskId });
+        return result;
+      } catch (e) {
+        console.error('deleteTask error:', e);
+        throw e;
+      }
     }
 
     // ===== State =====
@@ -1063,7 +1114,7 @@
     };
 
     // ===== Load Data =====
-    function loadUser() {
+    async function loadUser() {
       const urlParams = new URLSearchParams(window.location.search);
       currentUserId = urlParams.get('userId') || localStorage.getItem(CURRENT_USER_KEY);
 
@@ -1071,19 +1122,21 @@
         window.location.href = 'select_user.html';
         return;
       }
-      
-      users = getUsers();
+
+      setSyncStatus('syncing', '🔄 Загрузка пользователей...');
+      users = await getUsers();
       const currentUser = users.find(u => u.userId === currentUserId);
-      
+
       if (currentUser) {
         document.getElementById('userBadge').textContent = '👤 ' + currentUser.name + (currentUser.role === 'admin' ? ' (Админ)' : '');
       }
-      
-      loadTasks();
+
+      await loadTasks();
     }
 
-    function loadTasks() {
-      tasks = getTasks(currentUserId === 'admin' ? 'admin' : currentUserId);
+    async function loadTasks() {
+      setSyncStatus('syncing', '🔄 Загрузка задач...');
+      tasks = await getTasks(currentUserId === 'admin' ? 'admin' : currentUserId);
       renderBoard();
     }
 
@@ -1268,7 +1321,7 @@
     }
 
     // ===== Task Movement =====
-    function moveTask(taskId, direction) {
+    async function moveTask(taskId, direction) {
       const task = tasks.find(t => t.id === taskId);
       if (!task) return;
 
@@ -1279,8 +1332,8 @@
         newStatus = task.status === 'done' ? 'in-progress' : 'todo';
       }
 
-      updateTaskStatus(taskId, newStatus);
-      loadTasks();
+      await updateTaskStatus(taskId, newStatus);
+      await loadTasks();
     }
 
     // ===== Drag and Drop =====
@@ -1299,14 +1352,14 @@
       e.preventDefault();
     }
 
-    function handleDrop(e) {
+    async function handleDrop(e) {
       e.preventDefault();
       const newStatus = e.currentTarget.dataset.status;
       if (draggedTaskId && newStatus) {
         const task = tasks.find(t => t.id === draggedTaskId);
         if (task && task.status !== newStatus) {
-          updateTaskStatus(draggedTaskId, newStatus);
-          loadTasks();
+          await updateTaskStatus(draggedTaskId, newStatus);
+          await loadTasks();
         }
       }
       draggedTaskId = null;
@@ -1448,27 +1501,26 @@
     });
 
     // ===== Modal Functions =====
-    function openAddTaskModal() {
+    async function openAddTaskModal() {
       const modal = document.getElementById('addTaskModal');
       const textarea = document.getElementById('modalTaskInput');
-      
+
       // Load users into dropdown
-      users = getUsers();
       const select = document.getElementById('taskAssignee');
       select.innerHTML = '<option value="">Выберите исполнителя...</option>';
-      
+
       users.forEach(user => {
         const option = document.createElement('option');
         option.value = user.userId;
         option.textContent = user.name + (user.role === 'admin' ? ' 👑' : '');
         select.appendChild(option);
       });
-      
+
       // Pre-select current user
       if (currentUserId) {
         select.value = currentUserId;
       }
-      
+
       modal.classList.add('show');
       setTimeout(() => textarea.focus(), 100);
     }
@@ -1484,11 +1536,11 @@
       document.getElementById('datePickerModal').dataset.current = '';
     }
 
-    function submitTaskFromModal() {
+    async function submitTaskFromModal() {
       const textarea = document.getElementById('modalTaskInput');
       const title = textarea.value.trim();
       const assignedTo = document.getElementById('taskAssignee').value;
-      
+
       // Получаем дату из календаря
       const plannedDate = document.getElementById('datePickerModal').dataset.current || '';
 
@@ -1502,9 +1554,13 @@
         return;
       }
 
-      addTask(title, plannedDate, assignedTo);
-      closeAddTaskModal();
-      loadTasks();
+      try {
+        await addTask(title, plannedDate, assignedTo);
+        closeAddTaskModal();
+        await loadTasks();
+      } catch (e) {
+        alert('Ошибка при добавлении задачи: ' + e.message);
+      }
     }
 
     // ===== Event Listeners =====
@@ -1523,10 +1579,10 @@
     });
 
     // ===== Initialization =====
-    function init() {
+    async function init() {
       loadFontSettings();
       loadColumnColors();
-      loadUser();
+      await loadUser();
     }
 
     init();

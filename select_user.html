@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#667eea" />
-  <title>Kanban v2 - Выбор пользователя</title>
+  <title>Kanban v2 - Google Sheets</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -53,6 +53,19 @@
       font-weight: 600;
       margin-top: 8px;
     }
+
+    .sync-status {
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: center;
+    }
+    .sync-status.syncing { color: #ff9800; }
+    .sync-status.ready { color: #4caf50; }
+    .sync-status.error { color: #ff5252; }
 
     .user-list {
       display: flex;
@@ -358,6 +371,7 @@
     <div class="header">
       <h1>📋 Kanban Board v2</h1>
       <p>Выберите пользователя для продолжения</p>
+      <div class="sync-status" id="syncStatus">🔄 Загрузка...</div>
     </div>
 
     <div id="userListContainer">
@@ -408,60 +422,19 @@
   </div>
 
   <script>
-    // ===== LOCAL STORAGE API =====
-    const USERS_KEY = 'kanban_v2_users_local';
-    const TASKS_KEY = 'kanban_v2_tasks_local';
-    const CURRENT_USER_KEY = 'kanban_current_user_v2_local';
+    // ===== GOOGLE SHEETS API CONFIGURATION =====
+    // TODO: Replace with your Google Apps Script Web App URL
+    const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    
+    const CURRENT_USER_KEY = 'kanban_current_user_v2';
 
-    // ===== Mock Data =====
-    const DEFAULT_USERS = [
-      { userId: 'user_1', name: 'Артём', telegramId: '@artem', role: 'admin' },
-      { userId: 'user_2', name: 'Игорь', telegramId: '@igor', role: 'user' },
-      { userId: 'user_3', name: 'Мария', telegramId: '@maria', role: 'user' }
-    ];
-
-    const DEFAULT_TASKS = [
-      {
-        id: 'task_1',
-        title: 'Купить молоко и хлеб',
-        status: 'todo',
-        startDate: getTodayStr(),
-        endDate: '',
-        duration: '',
-        plannedDate: getTodayStr(),
-        assignedTo: 'user_2'
-      },
-      {
-        id: 'task_2',
-        title: 'Подготовить отчёт за квартал',
-        status: 'in-progress',
-        startDate: getDateOffsetStr(-2),
-        endDate: '',
-        duration: '',
-        plannedDate: getDateOffsetStr(2),
-        assignedTo: 'user_3'
-      },
-      {
-        id: 'task_3',
-        title: 'Позвонить клиенту Иванову',
-        status: 'todo',
-        startDate: getTodayStr(),
-        endDate: '',
-        duration: '',
-        plannedDate: getTodayStr(),
-        assignedTo: 'user_2'
-      },
-      {
-        id: 'task_4',
-        title: 'Исправить баги в модуле авторизации',
-        status: 'done',
-        startDate: getDateOffsetStr(-5),
-        endDate: getDateOffsetStr(-2),
-        duration: '3 дн.',
-        plannedDate: getDateOffsetStr(-3),
-        assignedTo: 'user_1'
-      }
-    ];
+    // Sync status management
+    function setSyncStatus(status, message) {
+      const el = document.getElementById('syncStatus');
+      if (!el) return;
+      el.className = 'sync-status ' + status;
+      el.textContent = message;
+    }
 
     // ===== Utilities =====
     function getTodayStr() {
@@ -495,97 +468,118 @@
       return div.innerHTML;
     }
 
-    // ===== LocalStorage API =====
-    function initStorage() {
-      if (!localStorage.getItem(USERS_KEY)) {
-        localStorage.setItem(USERS_KEY, JSON.stringify(DEFAULT_USERS));
+    // ===== GOOGLE SHEETS API =====
+    async function apiCall(action, payload = {}) {
+      setSyncStatus('syncing', '🔄 Синхронизация...');
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, _tgApiMode: true })
+        });
+        const result = await response.json();
+        if (result.ok) {
+          setSyncStatus('ready', '✅ Синхронизировано');
+          setTimeout(() => setSyncStatus('ready', ''), 3000);
+        } else {
+          setSyncStatus('error', '❌ Ошибка: ' + (result.error || 'Неизвестная'));
+        }
+        return result;
+      } catch (e) {
+        setSyncStatus('error', '❌ Ошибка сети');
+        console.error('API call error:', e);
+        throw e;
       }
-      if (!localStorage.getItem(TASKS_KEY)) {
-        localStorage.setItem(TASKS_KEY, JSON.stringify(DEFAULT_TASKS));
+    }
+
+    async function getUsers() {
+      try {
+        setSyncStatus('syncing', '🔄 Загрузка пользователей...');
+        const response = await fetch(API_URL + '?mode=tg-api&action=getUsers');
+        const result = await response.json();
+        if (result.ok) {
+          setSyncStatus('ready', '✅ Загружено');
+          setTimeout(() => setSyncStatus('ready', ''), 2000);
+        }
+        return result.ok ? (result.data || []) : [];
+      } catch (e) {
+        setSyncStatus('error', '❌ Ошибка загрузки');
+        console.error('getUsers error:', e);
+        return [];
       }
     }
 
-    function getUsers() {
-      return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+    async function addUser(name, telegramId, role) {
+      try {
+        const result = await apiCall('addUser', {
+          name: name,
+          telegramId: telegramId || '',
+          role: role || 'user'
+        });
+        return result;
+      } catch (e) {
+        console.error('addUser error:', e);
+        throw e;
+      }
     }
 
-    function saveUsers(users) {
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    async function updateUser(userId, name, telegramId, role) {
+      try {
+        const result = await apiCall('updateUser', {
+          userId: userId,
+          name: name,
+          telegramId: telegramId || '',
+          role: role || 'user'
+        });
+        return result;
+      } catch (e) {
+        console.error('updateUser error:', e);
+        throw e;
+      }
     }
 
-    function getTasks(userId = null) {
-      const all = JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
-      if (userId === 'admin') return all;
-      if (userId) return all.filter(t => t.assignedTo === userId);
-      return all;
+    async function deleteUser(userId) {
+      try {
+        const result = await apiCall('deleteUser', { userId: userId });
+        return result;
+      } catch (e) {
+        console.error('deleteUser error:', e);
+        throw e;
+      }
     }
 
-    function saveTasks(tasks) {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+    async function addTask(title, plannedDate, assignedTo) {
+      try {
+        const result = await apiCall('addTask', {
+          title: title,
+          plannedDate: plannedDate || '',
+          assignedTo: assignedTo
+        });
+        return result;
+      } catch (e) {
+        console.error('addTask error:', e);
+        throw e;
+      }
     }
 
-    function addUser(name, telegramId, role) {
-      const users = getUsers();
-      const user = {
-        userId: generateUserId(),
-        name,
-        telegramId: telegramId || '',
-        role: role || 'user'
-      };
-      users.push(user);
-      saveUsers(users);
-      return { ok: true, data: user };
+    async function updateTask(taskId, updates) {
+      try {
+        const result = await apiCall('updateTask', { id: taskId, ...updates });
+        return result;
+      } catch (e) {
+        console.error('updateTask error:', e);
+        throw e;
+      }
     }
 
-    function updateUser(userId, name, telegramId, role) {
-      const users = getUsers();
-      const idx = users.findIndex(u => u.userId === userId);
-      if (idx === -1) return { ok: false, error: 'Not found' };
-      
-      users[idx] = { ...users[idx], name, telegramId: telegramId || '', role: role || 'user' };
-      saveUsers(users);
-      return { ok: true, data: users[idx] };
-    }
-
-    function deleteUser(userId) {
-      const users = getUsers();
-      const filtered = users.filter(u => u.userId !== userId);
-      saveUsers(filtered);
-      return { ok: true };
-    }
-
-    function addTask(title, plannedDate, assignedTo) {
-      const tasks = getTasks();
-      const task = {
-        id: generateId(),
-        title,
-        status: 'todo',
-        startDate: getTodayStr(),
-        endDate: '',
-        duration: '',
-        plannedDate: plannedDate || '',
-        assignedTo
-      };
-      tasks.push(task);
-      saveTasks(tasks);
-      return { ok: true, data: getTasks('admin') };
-    }
-
-    function updateTask(taskId, updates) {
-      const tasks = getTasks();
-      const idx = tasks.findIndex(t => t.id === taskId);
-      if (idx === -1) return { ok: false, error: 'Not found' };
-      
-      tasks[idx] = { ...tasks[idx], ...updates };
-      saveTasks(tasks);
-      return { ok: true, data: getTasks('admin') };
-    }
-
-    function deleteTask(taskId) {
-      const tasks = getTasks();
-      const filtered = tasks.filter(t => t.id !== taskId);
-      saveTasks(filtered);
-      return { ok: true };
+    async function deleteTask(taskId) {
+      try {
+        const result = await apiCall('deleteTask', { id: taskId });
+        return result;
+      } catch (e) {
+        console.error('deleteTask error:', e);
+        throw e;
+      }
     }
 
     // ===== State =====
@@ -594,8 +588,9 @@
     let editingUserId = null;
 
     // ===== Load & Render =====
-    function loadUsers() {
-      users = getUsers();
+    async function loadUsers() {
+      setSyncStatus('syncing', '🔄 Загрузка...');
+      users = await getUsers();
       renderUserList();
     }
 
@@ -635,7 +630,7 @@
             <div class="user-actions">
               <button class="user-action-btn btn-edit" onclick="event.stopPropagation(); openEditUserModal('${user.userId}')" title="Редактировать">✏️</button>
               ${user.role !== 'admin' || users.filter(u => u.role === 'admin').length > 1 ?
-                `<button class="user-action-btn btn-delete" onclick="event.stopPropagation(); deleteUser('${user.userId}')" title="Удалить">🗑️</button>` :
+                `<button class="user-action-btn btn-delete" onclick="event.stopPropagation(); confirmDeleteUser('${user.userId}')" title="Удалить">🗑️</button>` :
                 ''}
             </div>
           </div>
@@ -712,46 +707,54 @@
       editingUserId = null;
     }
 
-    function saveUser() {
+    async function saveUser() {
       const name = document.getElementById('userName').value.trim();
       const telegramId = document.getElementById('userTelegram').value.trim();
       const role = document.getElementById('userRole').value;
-      
+
       if (!name) {
         alert('Введите имя');
         return;
       }
-      
-      if (editingUserId) {
-        updateUser(editingUserId, name, telegramId, role);
-      } else {
-        addUser(name, telegramId, role);
-      }
-      
-      closeUserModal();
-      loadUsers();
-      
-      if (editingUserId && selectedUserId === editingUserId) {
-        const updatedUser = users.find(u => u.userId === editingUserId);
-        if (updatedUser) selectedUserId = updatedUser.userId;
-      }
-      
-      if (!editingUserId) {
-        alert('✅ Пользователь "' + name + '" успешно добавлен!');
+
+      try {
+        if (editingUserId) {
+          await updateUser(editingUserId, name, telegramId, role);
+        } else {
+          await addUser(name, telegramId, role);
+        }
+
+        closeUserModal();
+        await loadUsers();
+
+        if (editingUserId && selectedUserId === editingUserId) {
+          const updatedUser = users.find(u => u.userId === editingUserId);
+          if (updatedUser) selectedUserId = updatedUser.userId;
+        }
+
+        if (!editingUserId) {
+          alert('✅ Пользователь "' + name + '" успешно добавлен!');
+        }
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
       }
     }
 
-    function deleteUser(userId) {
+    async function confirmDeleteUser(userId) {
       if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
-      
-      deleteUser(userId);
-      
-      if (selectedUserId === userId) {
-        selectedUserId = null;
-        document.getElementById('continueBtn').classList.remove('active');
+
+      try {
+        await deleteUser(userId);
+
+        if (selectedUserId === userId) {
+          selectedUserId = null;
+          document.getElementById('continueBtn').classList.remove('active');
+        }
+
+        await loadUsers();
+      } catch (e) {
+        alert('Ошибка при удалении: ' + e.message);
       }
-      
-      loadUsers();
     }
 
     // ===== Event Listeners =====
@@ -771,8 +774,11 @@
     });
 
     // ===== Initialization =====
-    initStorage();
-    loadUsers();
+    async function init() {
+      await loadUsers();
+    }
+
+    init();
   </script>
 </body>
 </html>

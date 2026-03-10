@@ -852,9 +852,18 @@
   </div>
 
   <script>
-    // ===== LOCAL STORAGE API =====
-    const USERS_KEY = 'kanban_v2_users_local';
-    const TASKS_KEY = 'kanban_v2_tasks_local';
+    // ===== GOOGLE SHEETS API CONFIGURATION =====
+    // TODO: Replace with your Google Apps Script Web App URL
+    const API_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+    
+    const USERS_KEY = 'kanban_v2_users';
+    const TASKS_KEY = 'kanban_v2_tasks';
+
+    // Sync status management
+    function setSyncStatus(status, message) {
+      // Admin page doesn't have sync status indicator in UI
+      console.log('Sync:', message);
+    }
 
     function getTodayStr() {
       const now = new Date();
@@ -902,79 +911,114 @@
       return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
     }
 
-    // ===== LocalStorage API =====
-    function getUsers() {
-      return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+    // ===== GOOGLE SHEETS API =====
+    async function apiCall(action, payload = {}) {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...payload, _tgApiMode: true })
+        });
+        const result = await response.json();
+        return result;
+      } catch (e) {
+        console.error('API call error:', e);
+        throw e;
+      }
     }
 
-    function saveUsers(users) {
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    async function getUsers() {
+      try {
+        const response = await fetch(API_URL + '?mode=tg-api&action=getUsers');
+        const result = await response.json();
+        return result.ok ? (result.data || []) : [];
+      } catch (e) {
+        console.error('getUsers error:', e);
+        return [];
+      }
     }
 
-    function getTasks() {
-      return JSON.parse(localStorage.getItem(TASKS_KEY)) || [];
+    async function getTasks() {
+      try {
+        const result = await apiCall('getTasks', {});
+        return result.ok ? (result.data || []) : [];
+      } catch (e) {
+        console.error('getTasks error:', e);
+        return [];
+      }
     }
 
-    function saveTasks(tasks) {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+    async function addTask(title, plannedDate, assignedTo, status = 'todo') {
+      try {
+        const result = await apiCall('addTask', {
+          title: title,
+          plannedDate: plannedDate || '',
+          assignedTo: assignedTo
+        });
+        return result;
+      } catch (e) {
+        console.error('addTask error:', e);
+        throw e;
+      }
     }
 
-    function addTask(title, plannedDate, assignedTo, status = 'todo') {
-      const tasks = getTasks();
-      const task = {
-        id: generateId(),
-        title,
-        status,
-        startDate: getTodayStr(),
-        endDate: '',
-        duration: '',
-        plannedDate: plannedDate || '',
-        assignedTo
-      };
-      tasks.push(task);
-      saveTasks(tasks);
+    async function updateTask(taskId, updates) {
+      try {
+        const result = await apiCall('updateTask', { id: taskId, ...updates });
+        return result;
+      } catch (e) {
+        console.error('updateTask error:', e);
+        throw e;
+      }
     }
 
-    function updateTask(taskId, updates) {
-      const tasks = getTasks();
-      const idx = tasks.findIndex(t => t.id === taskId);
-      if (idx === -1) return;
-      
-      tasks[idx] = { ...tasks[idx], ...updates };
-      saveTasks(tasks);
+    async function deleteTask(taskId) {
+      try {
+        const result = await apiCall('deleteTask', { id: taskId });
+        return result;
+      } catch (e) {
+        console.error('deleteTask error:', e);
+        throw e;
+      }
     }
 
-    function deleteTask(taskId) {
-      const tasks = getTasks();
-      const filtered = tasks.filter(t => t.id !== taskId);
-      saveTasks(filtered);
+    async function addUser(name, telegramId, role) {
+      try {
+        const result = await apiCall('addUser', {
+          name: name,
+          telegramId: telegramId || '',
+          role: role || 'user'
+        });
+        return result;
+      } catch (e) {
+        console.error('addUser error:', e);
+        throw e;
+      }
     }
 
-    function addUser(name, telegramId, role) {
-      const users = getUsers();
-      const user = {
-        userId: generateUserId(),
-        name,
-        telegramId: telegramId || '',
-        role: role || 'user'
-      };
-      users.push(user);
-      saveUsers(users);
+    async function updateUser(userId, name, telegramId, role) {
+      try {
+        const result = await apiCall('updateUser', {
+          userId: userId,
+          name: name,
+          telegramId: telegramId || '',
+          role: role || 'user'
+        });
+        return result;
+      } catch (e) {
+        console.error('updateUser error:', e);
+        throw e;
+      }
     }
 
-    function updateUser(userId, name, telegramId, role) {
-      const users = getUsers();
-      const idx = users.findIndex(u => u.userId === userId);
-      if (idx === -1) return;
-      
-      users[idx] = { ...users[idx], name, telegramId: telegramId || '', role: role || 'user' };
-      saveUsers(users);
-    }
-
-    function deleteUser(userId) {
-      const users = getUsers();
-      const filtered = users.filter(u => u.userId !== userId);
-      saveUsers(filtered);
+    async function deleteUser(userId) {
+      try {
+        const result = await apiCall('deleteUser', { userId: userId });
+        return result;
+      } catch (e) {
+        console.error('deleteUser error:', e);
+        throw e;
+      }
     }
 
     // ===== State =====
@@ -1403,12 +1447,12 @@
     }
 
     // ===== Load Data =====
-    function loadData() {
+    async function loadData() {
       loadFontSettings();
       loadColumnColors();
-      
-      users = getUsers();
-      tasks = getTasks();
+
+      users = await getUsers();
+      tasks = await getTasks();
       filteredTasks = [...tasks];
 
       populateUserFilter();
@@ -1594,7 +1638,7 @@
       editingTaskId = null;
     }
 
-    function saveTask() {
+    async function saveTask() {
       const title = document.getElementById('taskTitle').value.trim();
       const assignedTo = document.getElementById('taskAssignee').value;
       const status = document.getElementById('taskStatus').value;
@@ -1603,20 +1647,28 @@
       if (!title) { alert('Введите название задачи'); return; }
       if (!assignedTo) { alert('Выберите исполнителя'); return; }
 
-      if (editingTaskId) {
-        updateTask(editingTaskId, { title, assignedTo, status, plannedDate });
-      } else {
-        addTask(title, plannedDate, assignedTo, status);
-      }
+      try {
+        if (editingTaskId) {
+          await updateTask(editingTaskId, { title, assignedTo, status, plannedDate });
+        } else {
+          await addTask(title, plannedDate, assignedTo, status);
+        }
 
-      closeTaskModal();
-      loadData();
+        closeTaskModal();
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
     }
 
-    function deleteTaskById(taskId) {
+    async function deleteTaskById(taskId) {
       if (!confirm('Вы уверены, что хотите удалить эту задачу?')) return;
-      deleteTask(taskId);
-      loadData();
+      try {
+        await deleteTask(taskId);
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
     }
 
     // ===== User Modal =====
@@ -1646,27 +1698,35 @@
       editingUserId = null;
     }
 
-    function saveUser() {
+    async function saveUser() {
       const name = document.getElementById('userName').value.trim();
       const telegramId = document.getElementById('userTelegram').value.trim();
       const role = document.getElementById('userRole').value;
 
       if (!name) { alert('Введите имя'); return; }
 
-      if (editingUserId) {
-        updateUser(editingUserId, name, telegramId, role);
-      } else {
-        addUser(name, telegramId, role);
-      }
+      try {
+        if (editingUserId) {
+          await updateUser(editingUserId, name, telegramId, role);
+        } else {
+          await addUser(name, telegramId, role);
+        }
 
-      closeUserModal();
-      loadData();
+        closeUserModal();
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
     }
 
-    function deleteUserById(userId) {
+    async function deleteUserById(userId) {
       if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
-      deleteUser(userId);
-      loadData();
+      try {
+        await deleteUser(userId);
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
     }
 
     // ===== Event Listeners =====
@@ -1688,7 +1748,11 @@
     });
 
     // ===== Initialization =====
-    loadData();
+    async function init() {
+      await loadData();
+    }
+
+    init();
   </script>
 </body>
 </html>
