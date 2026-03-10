@@ -419,6 +419,12 @@
       background: #f5f7fa;
     }
 
+    .date-quick-btn.active {
+      background: #667eea;
+      border-color: #667eea;
+      color: white;
+    }
+
     .date-selected-display {
       font-size: 14px;
       color: #667eea;
@@ -1967,17 +1973,46 @@
     }
 
     function adminSelectPlannedDate(daysOffset) {
+      const display = document.getElementById('adminDateSelectedDisplay');
+      const btns = document.querySelectorAll('#adminDatePickerModal .date-quick-btn, .date-quick-btn[onclick^="adminSelectPlannedDate"]');
+
+      // Если уже выбрана эта дата - сбрасываем
+      if (adminSelectedPlannedDays === daysOffset) {
+        adminSelectedPlannedDays = null;
+        display.textContent = '';
+        document.getElementById('taskPlannedDate').value = '';
+        btns.forEach(b => b.classList.remove('active'));
+        return;
+      }
+
+      adminSelectedPlannedDays = daysOffset;
       const dateStr = adminGetDateOffsetStr(daysOffset);
       document.getElementById('taskPlannedDate').value = dateStr;
-      document.getElementById('adminDateSelectedDisplay').textContent = adminFormatDateWithDay(dateStr);
-      adminSelectedPlannedDays = daysOffset;
+
+      // Подсветка активной кнопки
+      btns.forEach(b => {
+        b.classList.remove('active');
+        const btnDays = b.getAttribute('data-days');
+        if (btnDays !== null && parseInt(btnDays) === daysOffset) {
+          b.classList.add('active');
+        }
+      });
+
+      display.textContent = adminFormatDateWithDay(dateStr);
     }
 
     function adminAdjustPlannedDate(offset) {
+      const display = document.getElementById('adminDateSelectedDisplay');
+      const btns = document.querySelectorAll('.date-quick-btn');
+      
+      // Сбрасываем выделение кнопок при ручной корректировке
+      btns.forEach(b => b.classList.remove('active'));
+      adminSelectedPlannedDays = null;
+      
       const current = document.getElementById('taskPlannedDate').value || adminGetTodayStr();
       const newDate = adminGetDateOffsetStrFrom(current, offset);
       document.getElementById('taskPlannedDate').value = newDate;
-      document.getElementById('adminDateSelectedDisplay').textContent = adminFormatDateWithDay(newDate);
+      display.textContent = adminFormatDateWithDay(newDate);
     }
 
     function adminToggleDatePicker() {
