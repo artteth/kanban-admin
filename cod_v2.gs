@@ -60,6 +60,9 @@ function getTasksSheet() {
     sheet = ss.insertSheet(SHEET_NAME_TASKS);
     // ID, Задание, Статус, Дата начала, Дата конца, Время выполнения, Плановая дата, AssignedTo
     sheet.appendRow(['ID', 'Задание', 'Статус', 'Дата начала', 'Дата конца', 'Время выполнения', 'Плановая дата', 'AssignedTo']);
+    // Форматирование заголовков
+    sheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#f5f7fa');
+    sheet.setFrozenRows(1);
   }
   return sheet;
 }
@@ -70,6 +73,9 @@ function getUsersSheet() {
   if (!sheet) {
     sheet = ss.insertSheet(SHEET_NAME_USERS);
     sheet.appendRow(['UserID', 'Имя', 'TelegramID', 'Роль']);
+    // Форматирование заголовков
+    sheet.getRange(1, 1, 1, 4).setFontWeight('bold').setBackground('#f5f7fa');
+    sheet.setFrozenRows(1);
   }
   return sheet;
 }
