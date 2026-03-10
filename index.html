@@ -1025,18 +1025,15 @@
           }
         }
         const url = `${API_URL}?${urlParams}`;
-        console.log('JSONP URL:', url);
 
         const script = document.createElement('script');
         script.src = url;
         script.onerror = () => {
           setSyncStatus('error', '❌ Ошибка сети');
-          console.error('JSONP script load error');
           reject(new Error('JSONP request failed'));
         };
 
         window[callbackName] = (response) => {
-          console.log('JSONP response for', action, ':', response);
           if (response && response.ok) {
             setSyncStatus('ready', '✅ Синхронизировано');
             setTimeout(() => setSyncStatus('ready', ''), 3000);

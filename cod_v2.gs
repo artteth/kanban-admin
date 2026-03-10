@@ -3,7 +3,7 @@
 // ============================================================================
 
 const SPREADSHEET_ID = '1TsUjce91h44W_PF4dzCqCwGTB_jqhjJxRWBsLiGPmjE';
-const SHEET_NAME_TASKS = 'задания';
+const SHEET_NAME_TASKS = 'Задания';
 const SHEET_NAME_USERS = 'Пользователи';
 const LOCK_TIMEOUT_SECONDS = 30;
 const TELEGRAM_BOT_TOKEN = '8664566561:AAEV11uRMZIxmqjcoQybafCWAmQhdoQdbXs';
@@ -90,7 +90,7 @@ function getUsers() {
     const data = sheet.getDataRange().getValues();
     const headers = data.shift();
 
-    const users = data
+    return data
       .filter(row => row[0] && row[1]) // Есть ID и Имя
       .map(row => ({
         userId: row[0] || '',
@@ -98,11 +98,9 @@ function getUsers() {
         telegramId: row[2] || '',
         role: row[3] || 'user'
       }));
-    
-    return { ok: true, data: users };
   } catch (e) {
     Logger.log('getUsers error: ' + e.message);
-    return { ok: false, error: e.message, data: [] };
+    return [];
   }
 }
 
@@ -211,10 +209,7 @@ function getTasksData(userId) {
 }
 
 function getTasks(userId) {
-  return {
-    ok: true,
-    data: getTasksData(userId)
-  };
+  return getTasksData(userId);
 }
 
 function addTask(title, plannedDate, assignedTo) {
@@ -386,7 +381,7 @@ function doGet(e) {
     }
 
     const output = ContentService
-      .createTextOutput(callback + '(' + JSON.stringify(result) + ')')
+      .createTextOutput(callback + '(' + JSON.stringify({ ok: true, data: result }) + ')')
       .setMimeType(ContentService.MimeType.JAVASCRIPT);
     return output;
   }
@@ -395,9 +390,9 @@ function doGet(e) {
   if (mode === 'tg-api') {
     try {
       if (action === 'getTasks') {
-        return jsonResponse(getTasks(userId));
+        return jsonResponse({ ok: true, data: getTasks(userId) });
       } else if (action === 'getUsers') {
-        return jsonResponse(getUsers());
+        return jsonResponse({ ok: true, data: getUsers() });
       } else {
         return jsonResponse({ ok: false, error: 'Unknown action for GET' });
       }
