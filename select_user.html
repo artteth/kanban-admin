@@ -71,6 +71,13 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .user-card:active {
+      transform: scale(0.98);
     }
 
     .user-card:hover,
@@ -620,7 +627,7 @@
         const isSelected = user.userId === selectedUserId ? 'selected' : '';
 
         html += `
-          <div class="user-card ${isSelected}" onclick="selectUser('${user.userId}')" ontouchstart="handleTouchStart(event, '${user.userId}')" ontouchend="handleTouchEnd(event)">
+          <div class="user-card ${isSelected}" data-user-id="${user.userId}" onclick="selectUser('${user.userId}')" ontouchstart="handleTouchStart(event, '${user.userId}')" ontouchend="handleTouchEnd(event, '${user.userId}')">
             <div class="user-avatar">${avatarLetter}</div>
             <div class="user-info">
               <div class="user-name">${escapeHtml(user.name)}</div>
@@ -643,13 +650,17 @@
     function handleTouchStart(event, userId) {
       const card = event.currentTarget;
       card.classList.add('touch-hover');
+      // Предотвращаем задержку клика на сенсорных устройствах
+      event.preventDefault();
     }
 
-    function handleTouchEnd(event) {
+    function handleTouchEnd(event, userId) {
       const card = event.currentTarget;
       setTimeout(() => {
         card.classList.remove('touch-hover');
-      }, 200);
+      }, 100);
+      // Выбираем пользователя сразу при отпускании пальца
+      selectUser(userId);
     }
 
     function selectUser(userId) {
