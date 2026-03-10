@@ -501,15 +501,33 @@
       padding: 16px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
       cursor: grab;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
       border-left: 4px solid #667eea;
     }
-    
+
     .task-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    
+
+    /* Анимации */
+    @keyframes cardArrive {
+      0% { opacity: 0; transform: translateY(-18px) scale(0.96); }
+      60% { opacity: 1; transform: translateY(4px) scale(1.01); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .task-card.just-arrived {
+      animation: cardArrive 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes syncPulse {
+      0%, 100% { box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0 rgba(74,144,217,0.4); }
+      50% { box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 6px rgba(74,144,217,0); }
+    }
+
+    .task-card.syncing { animation: syncPulse 1.2s ease-in-out infinite; }
+
     .task-card.todo { border-left-color: #ff9800; }
     .task-card.in-progress { border-left-color: #2196f3; }
     .task-card.done { border-left-color: #4caf50; }
@@ -1050,6 +1068,7 @@
     let editingUserId = null;
     let currentView = 'table';
     let sortState = { 'todo': null, 'in-progress': null, 'done': null };
+    let pendingTaskIds = new Set();
 
     // ===== Font Settings Config =====
     const FONT_SETTINGS = {
@@ -1433,12 +1452,43 @@
         newStatus = task.status === 'done' ? 'in-progress' : 'todo';
       }
 
-      updateTask(taskId, { status: newStatus });
-      loadData();
+      // Оптимистичное обновление
+      task.status = newStatus;
+      pendingTaskIds.add(taskId);
+
+      // Обновляем UI сразу
       if (currentView === 'board') {
+        // Удаляем старую карточку
+        const oldCard = document.querySelector(`.task-card[data-id="${taskId}"]`);
+        if (oldCard) oldCard.remove();
+
+        // Рендерим новую с анимацией
         const data = filteredTasks.length ? filteredTasks : tasks;
         renderBoardViewWithData(data);
+
+        // Добавляем анимацию
+        const newCard = document.querySelector(`.task-card[data-id="${taskId}"]`);
+        if (newCard) {
+          newCard.classList.add('syncing');
+          newCard.classList.add('just-arrived');
+        }
       }
+
+      // Отправляем на сервер
+      apiJsonp('updateStatus', { id: taskId, status: newStatus })
+        .then(() => {
+          pendingTaskIds.delete(taskId);
+          const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
+          if (card) {
+            card.classList.remove('syncing');
+            card.classList.remove('just-arrived');
+          }
+        })
+        .catch(err => {
+          pendingTaskIds.delete(taskId);
+          alert('Ошибка при перемещении: ' + err.message);
+          loadData();
+        });
     }
     
     function sortBoardTasks(status) {
