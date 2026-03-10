@@ -383,7 +383,185 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
-    
+
+    /* Date Picker Styles */
+    .date-picker-section {
+      margin-top: 12px;
+    }
+
+    .date-picker-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .date-quick-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .date-quick-btn {
+      padding: 8px 12px;
+      border: 2px solid #e1e5eb;
+      border-radius: 8px;
+      background: white;
+      color: #333;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .date-quick-btn:hover {
+      border-color: #667eea;
+      background: #f5f7fa;
+    }
+
+    .date-selected-display {
+      font-size: 14px;
+      color: #667eea;
+      font-weight: 600;
+      padding: 8px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .date-picker-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10001;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .date-picker-modal.show {
+      display: flex;
+    }
+
+    .date-picker-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+    }
+
+    .date-picker-content {
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .date-picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .date-picker-nav {
+      background: #f5f7fa;
+      border: 1px solid #e1e5eb;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      cursor: pointer;
+      color: #333;
+    }
+
+    #currentMonthYear {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .date-picker-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .date-picker-weekdays span {
+      font-size: 12px;
+      color: #888;
+      padding: 5px;
+    }
+
+    .date-picker-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 15px;
+    }
+
+    .date-picker-day {
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .date-picker-day:hover {
+      background: #f5f7fa;
+    }
+
+    .date-picker-day.selected {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .date-picker-day.today {
+      border: 2px solid #667eea;
+    }
+
+    .date-picker-day.empty {
+      cursor: default;
+    }
+
+    .date-picker-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .date-picker-clear,
+    .date-picker-close {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .date-picker-clear {
+      background: #f5f7fa;
+      color: #666;
+    }
+
+    .date-picker-close {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
     .filters {
       display: flex;
       gap: 12px;
@@ -829,7 +1007,18 @@
       
       <div class="form-group">
         <label for="taskPlannedDate">📅 Плановая дата</label>
-        <input type="date" id="taskPlannedDate" />
+        <div class="date-picker-section">
+          <div class="date-picker-label">📅 Запланировать на:</div>
+          <div class="date-quick-btns">
+            <button class="date-quick-btn" data-days="0" onclick="adminSelectPlannedDate(0)">Сегодня</button>
+            <button class="date-quick-btn" data-days="1" onclick="adminSelectPlannedDate(1)">Завтра</button>
+            <button class="date-quick-btn" data-adjust="-1" onclick="adminAdjustPlannedDate(-1)">−1 день</button>
+            <button class="date-quick-btn" data-adjust="1" onclick="adminAdjustPlannedDate(1)">+1 день</button>
+            <button class="date-quick-btn" onclick="adminToggleDatePicker()">📅 Календарь</button>
+          </div>
+          <div class="date-selected-display" id="adminDateSelectedDisplay"></div>
+          <input type="date" id="taskPlannedDate" style="display:none;" />
+        </div>
       </div>
 
       <div class="modal-buttons">
@@ -840,6 +1029,27 @@
   </div>
 
   <!-- User Modal -->
+  
+  <!-- Date Picker Modal -->
+  <div class="date-picker-modal" id="adminDatePickerModal">
+    <div class="date-picker-overlay" onclick="adminCloseDatePicker()"></div>
+    <div class="date-picker-content">
+      <div class="date-picker-header">
+        <button class="date-picker-nav" id="adminPrevMonth">&lt;</button>
+        <span id="adminCurrentMonthYear"></span>
+        <button class="date-picker-nav" id="adminNextMonth">&gt;</button>
+      </div>
+      <div class="date-picker-weekdays">
+        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+      </div>
+      <div class="date-picker-days" id="adminDatePickerDays"></div>
+      <div class="date-picker-actions">
+        <button class="date-picker-clear" id="adminClearDate">Очистить</button>
+        <button class="date-picker-close" id="adminCloseDatePicker">Закрыть</button>
+      </div>
+    </div>
+  </div>
+  
   <div class="modal-overlay" id="userModal">
     <div class="modal-content">
       <div class="modal-title" id="userModalTitle">Новый пользователь</div>
@@ -1708,6 +1918,145 @@
       document.getElementById('taskModal').classList.remove('show');
       editingTaskId = null;
     }
+
+    // ===== Date Picker Functions =====
+    let adminSelectedPlannedDays = null;
+    let adminPickerYear, adminPickerMonth;
+
+    function adminGetTodayStr() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function adminGetDateOffsetStr(daysOffset) {
+      const date = new Date();
+      date.setDate(date.getDate() + daysOffset);
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function adminGetDateOffsetStrFrom(baseStr, offsetDays) {
+      const [y, m, day] = baseStr.split('-').map(Number);
+      const d = new Date(y, m - 1, day, 12, 0, 0);
+      d.setDate(d.getDate() + offsetDays);
+      const y2 = d.getFullYear();
+      const m2 = String(d.getMonth() + 1).padStart(2, '0');
+      const d2 = String(d.getDate()).padStart(2, '0');
+      return `${y2}-${m2}-${d2}`;
+    }
+
+    function adminFormatDate(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      const date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+    }
+
+    function adminFormatDateWithDay(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      const date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    function adminSelectPlannedDate(daysOffset) {
+      const dateStr = adminGetDateOffsetStr(daysOffset);
+      document.getElementById('taskPlannedDate').value = dateStr;
+      document.getElementById('adminDateSelectedDisplay').textContent = adminFormatDateWithDay(dateStr);
+      adminSelectedPlannedDays = daysOffset;
+    }
+
+    function adminAdjustPlannedDate(offset) {
+      const current = document.getElementById('taskPlannedDate').value || adminGetTodayStr();
+      const newDate = adminGetDateOffsetStrFrom(current, offset);
+      document.getElementById('taskPlannedDate').value = newDate;
+      document.getElementById('adminDateSelectedDisplay').textContent = adminFormatDateWithDay(newDate);
+    }
+
+    function adminToggleDatePicker() {
+      const modal = document.getElementById('adminDatePickerModal');
+      modal.classList.add('show');
+      adminRenderDatePicker();
+    }
+
+    function adminCloseDatePicker() {
+      document.getElementById('adminDatePickerModal').classList.remove('show');
+    }
+
+    function adminRenderDatePicker() {
+      const today = adminGetTodayStr();
+      const selected = document.getElementById('taskPlannedDate').value;
+
+      if (!adminPickerYear || !adminPickerMonth) {
+        const now = new Date();
+        adminPickerYear = now.getFullYear();
+        adminPickerMonth = now.getMonth();
+      }
+
+      document.getElementById('adminCurrentMonthYear').textContent = new Date(adminPickerYear, adminPickerMonth).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+      const firstDay = new Date(adminPickerYear, adminPickerMonth, 1);
+      const lastDay = new Date(adminPickerYear, adminPickerMonth + 1, 0);
+      const startDay = (firstDay.getDay() + 6) % 7;
+      const totalDays = lastDay.getDate();
+
+      let html = '';
+      for (let i = 0; i < startDay; i++) {
+        html += '<div class="date-picker-day empty"></div>';
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const dateStr = `${adminPickerYear}-${String(adminPickerMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        let classes = 'date-picker-day';
+        if (dateStr === today) classes += ' today';
+        if (dateStr === selected) classes += ' selected';
+
+        html += `<div class="${classes}" onclick="adminSelectDate('${dateStr}')">${day}</div>`;
+      }
+
+      document.getElementById('adminDatePickerDays').innerHTML = html;
+    }
+
+    function adminSelectDate(dateStr) {
+      document.getElementById('taskPlannedDate').value = dateStr;
+      document.getElementById('adminDateSelectedDisplay').textContent = adminFormatDateWithDay(dateStr);
+      adminCloseDatePicker();
+    }
+
+    document.getElementById('adminPrevMonth').addEventListener('click', function() {
+      adminPickerMonth--;
+      if (adminPickerMonth < 0) {
+        adminPickerMonth = 11;
+        adminPickerYear--;
+      }
+      adminRenderDatePicker();
+    });
+
+    document.getElementById('adminNextMonth').addEventListener('click', function() {
+      adminPickerMonth++;
+      if (adminPickerMonth > 11) {
+        adminPickerMonth = 0;
+        adminPickerYear++;
+      }
+      adminRenderDatePicker();
+    });
+
+    document.getElementById('adminClearDate').addEventListener('click', function() {
+      document.getElementById('taskPlannedDate').value = '';
+      document.getElementById('adminDateSelectedDisplay').textContent = '';
+      adminSelectedPlannedDays = null;
+      adminCloseDatePicker();
+    });
+
+    document.getElementById('adminCloseDatePicker').addEventListener('click', adminCloseDatePicker);
+
 
     async function saveTask() {
       const title = document.getElementById('taskTitle').value.trim();
