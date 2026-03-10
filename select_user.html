@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#667eea" />
-  <title>Kanban v2 - Локальный тест</title>
+  <title>Kanban v2 - Выбор пользователя</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -358,7 +358,6 @@
     <div class="header">
       <h1>📋 Kanban Board v2</h1>
       <p>Выберите пользователя для продолжения</p>
-      <span class="badge">🏠 Локальный режим</span>
     </div>
 
     <div id="userListContainer">
@@ -374,7 +373,7 @@
     </button>
 
     <div class="admin-link">
-      <a href="admin_local.html">🔧 Админская панель</a>
+      <a href="admin.html">🔧 Админская панель</a>
     </div>
   </div>
 
@@ -673,14 +672,14 @@
 
     function continueToBoard() {
       if (!selectedUserId) return;
-      
+
       localStorage.setItem(CURRENT_USER_KEY, selectedUserId);
-      
+
       const user = users.find(u => u.userId === selectedUserId);
       if (user && user.role === 'admin') {
-        window.location.href = 'admin_local.html';
+        window.location.href = 'admin.html';
       } else {
-        window.location.href = 'index_local.html?userId=' + selectedUserId;
+        window.location.href = 'index.html?userId=' + selectedUserId;
       }
     }
 
