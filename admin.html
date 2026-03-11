@@ -1458,8 +1458,11 @@
     });
 
     // ===== View Toggle =====
+    const ADMIN_VIEW_KEY = 'kanban_admin_view_mode';
+
     function setView(view) {
       currentView = view;
+      localStorage.setItem(ADMIN_VIEW_KEY, view);
 
       const boardView = document.getElementById('boardView');
       const tableView = document.getElementById('tableView');
@@ -1481,6 +1484,11 @@
         viewTableBtn.classList.add('active');
         viewBoardBtn.classList.remove('active');
       }
+    }
+
+    function loadSavedView() {
+      const savedView = localStorage.getItem(ADMIN_VIEW_KEY) || 'table';
+      setView(savedView);
     }
 
     // ===== Board Filters =====
@@ -2205,6 +2213,7 @@
     // ===== Initialization =====
     async function init() {
       await loadData();
+      loadSavedView();
     }
 
     init();
