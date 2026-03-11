@@ -27,7 +27,14 @@
       gap: 16px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     }
-    
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
     .header h1 {
       font-size: 24px;
       color: #333;
@@ -801,9 +808,92 @@
     .table-view {
       display: block;
     }
-    
+
     .table-view.hidden {
       display: none;
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      /* Header wraps vertically */
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header h1 {
+        margin-bottom: 12px;
+      }
+
+      .header-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      /* Board becomes single column */
+      .board-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .column {
+        min-height: 300px;
+      }
+
+      /* Table scrolls horizontally */
+      .table-view {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table {
+        min-width: 800px;
+      }
+
+      /* Smaller fonts and buttons */
+      .btn {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+
+      .settings-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+
+      .task-card {
+        padding: 12px;
+      }
+
+      .task-title {
+        font-size: 14px;
+      }
+
+      .task-actions button {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 20px;
+      }
+
+      .column {
+        padding: 12px;
+      }
+
+      .column-header {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+
+      .task-card {
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -812,7 +902,7 @@
     <!-- Header -->
     <div class="header">
       <h1>🔧 Админская панель</h1>
-      <div style="display: flex; gap: 12px; align-items: center;">
+      <div class="header-controls" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
         <div class="settings-container">
           <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">⚙️</button>
           <div class="settings-dropdown" id="settingsDropdown">
