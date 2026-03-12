@@ -2499,23 +2499,28 @@
       if (!tbody) return;
 
       if (recurringTasks.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#888;">📭 Нет циклических задач</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#888;">📭 Нет циклических задач</td></tr>';
         return;
       }
 
       tbody.innerHTML = recurringTasks.map(task => {
         const assignee = users.find(u => u.userId === task.assignedTo);
         const periodText = formatPeriod(task.recurrenceInterval, task.recurrenceType);
-        const nextDate = formatDateWithDay(task.nextDueDate);
+        const nextDate = task.nextDueDate ? formatDateWithDay(task.nextDueDate) : 'Не назначена';
+        const isPaused = task.isPaused;
 
         return `
-          <tr>
-            <td>${escapeHtml(task.title)}</td>
+          <tr style="${isPaused ? 'opacity: 0.6; background: #f9f9f9;' : ''}">
+            <td>${escapeHtml(task.title)} ${isPaused ? '<span style="background:#ffc107;color:#000;padding:2px 8px;border-radius:4px;font-size:12px;margin-left:8px;">⏸️ На паузе</span>' : ''}</td>
             <td>🔄 ${periodText}</td>
             <td>📅 ${nextDate}</td>
             <td>👤 ${assignee ? assignee.name : 'Не назначен'}</td>
             <td>
               <button class="action-btn btn-edit" onclick="openEditRecurringModal('${task.id}')" title="Редактировать">✏️</button>
+              ${isPaused 
+                ? `<button class="action-btn" style="background:#e3f2fd;color:#2196f3;" onclick="resumeRecurringTask('${task.id}')" title="Продолжить">▶️</button>`
+                : `<button class="action-btn" style="background:#fff3e0;color:#ff9800;" onclick="pauseRecurringTask('${task.id}')" title="На паузу">⏸️</button>`
+              }
               <button class="action-btn btn-delete" onclick="removeRecurringTask('${task.id}')" title="Удалить цикличность">✕</button>
             </td>
           </tr>
@@ -2628,6 +2633,24 @@
 
       try {
         await apiJsonp('removeRecurring', { id: taskId });
+        loadRecurringTasks();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    async function pauseRecurringTask(taskId) {
+      try {
+        await apiJsonp('pauseRecurringTask', { id: taskId });
+        loadRecurringTasks();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    async function resumeRecurringTask(taskId) {
+      try {
+        await apiJsonp('resumeRecurringTask', { id: taskId });
         loadRecurringTasks();
       } catch (e) {
         alert('Ошибка: ' + e.message);

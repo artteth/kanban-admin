@@ -45,6 +45,52 @@ function calculateNextDate(currentDate, interval, type) {
   return y + '-' + m + '-' + d;
 }
 
+// Поставить циклическую задачу на паузу
+function pauseRecurringTask(taskId) {
+  const lock = getLock();
+  lock.waitLock(LOCK_TIMEOUT_SECONDS * 1000);
+  try {
+    const sheet = getTasksSheet();
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === taskId) {
+        const row = i + 1;
+        // Устанавливаем паузу (колонка M = 13)
+        sheet.getRange(row, 13).setValue('TRUE');
+        return { ok: true, data: getRecurringTasks() };
+      }
+    }
+    
+    return { ok: false, error: 'Задача не найдена' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+// Снять с паузы
+function resumeRecurringTask(taskId) {
+  const lock = getLock();
+  lock.waitLock(LOCK_TIMEOUT_SECONDS * 1000);
+  try {
+    const sheet = getTasksSheet();
+    const data = sheet.getDataRange().getValues();
+    
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][0] === taskId) {
+        const row = i + 1;
+        // Снимаем паузу
+        sheet.getRange(row, 13).clearContent();
+        return { ok: true, data: getRecurringTasks() };
+      }
+    }
+    
+    return { ok: false, error: 'Задача не найдена' };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 // ============================================================================
 // Утилиты
 // ============================================================================
@@ -471,8 +517,15 @@ function getRecurringTasks() {
     const data = sheet.getDataRange().getValues();
     const headers = data.shift();
     
+    Logger.log('getRecurringTasks: total rows=' + data.length);
+    Logger.log('getRecurringTasks: checking for IsRecurring in column 11');
+
     return data
-      .filter(row => row[11] === 'TRUE')
+      .filter(row => {
+        const isRecurring = row[11];
+        Logger.log('Task: ' + row[1] + ', IsRecurring=' + isRecurring + ', type=' + typeof isRecurring);
+        return isRecurring === 'TRUE' || isRecurring === true || isRecurring === 'true';
+      })
       .map(row => ({
         id: row[0] || generateId(),
         title: row[1] || '',
@@ -485,7 +538,8 @@ function getRecurringTasks() {
         recurrenceInterval: row[8] || '',
         recurrenceType: row[9] || '',
         nextDueDate: row[10] || '',
-        isRecurring: true
+        isRecurring: true,
+        isPaused: row[12] === 'TRUE' || row[12] === true // Колонка M (13-я)
       }));
   } catch (e) {
     Logger.log('getRecurringTasks error: ' + e.message);
@@ -626,6 +680,10 @@ function doGet(e) {
         });
       } else if (action === 'removeRecurring') {
         result = removeRecurring(e.parameter.id);
+      } else if (action === 'pauseRecurringTask') {
+        result = pauseRecurringTask(e.parameter.id);
+      } else if (action === 'resumeRecurringTask') {
+        result = resumeRecurringTask(e.parameter.id);
       } else {
         result = { ok: false, error: 'Unknown action' };
       }
@@ -770,6 +828,12 @@ function doPost(e) {
 
         case 'removeRecurring':
           return jsonResponse(removeRecurring(payload.id));
+
+        case 'pauseRecurringTask':
+          return jsonResponse(pauseRecurringTask(payload.id));
+
+        case 'resumeRecurringTask':
+          return jsonResponse(resumeRecurringTask(payload.id));
 
         default:
           return jsonResponse({ ok: false, error: 'Unknown action' });
