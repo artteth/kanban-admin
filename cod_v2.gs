@@ -578,7 +578,14 @@ function doGet(e) {
         const title = e.parameter.title || '';
         const plannedDate = e.parameter.plannedDate || '';
         const assignedTo = e.parameter.assignedTo || userId;
-        result = addTask(title, plannedDate, assignedTo);
+        // Передаём параметры цикличности
+        const recurrence = {
+          recurrenceInterval: e.parameter.recurrenceInterval || '',
+          recurrenceType: e.parameter.recurrenceType || '',
+          nextDueDate: e.parameter.nextDueDate || '',
+          isRecurring: e.parameter.isRecurring || false
+        };
+        result = addTask(title, plannedDate, assignedTo, recurrence);
       } else if (action === 'updateStatus') {
         const id = e.parameter.id;
         const status = e.parameter.status;
@@ -704,7 +711,14 @@ function doPost(e) {
           const title = payload.title || '';
           const planned = payload.plannedDate || '';
           const assignedTo = payload.assignedTo || payload.userId || null;
-          return jsonResponse(addTask(title, planned, assignedTo));
+          // Передаём параметры цикличности
+          const recurrence = {
+            recurrenceInterval: payload.recurrenceInterval || '',
+            recurrenceType: payload.recurrenceType || '',
+            nextDueDate: payload.nextDueDate || '',
+            isRecurring: payload.isRecurring || false
+          };
+          return jsonResponse(addTask(title, planned, assignedTo, recurrence));
           
         case 'updateTask':
           const taskId = payload.id;
