@@ -268,8 +268,29 @@ function addTask(title, plannedDate, assignedTo, recurrence) {
   try {
     const sheet = getTasksSheet();
     
-    // recurrence = { interval: 4, type: 'months', nextDueDate: '2026-07-01' }
-    const isRecurring = recurrence && recurrence.interval && recurrence.type && recurrence.nextDueDate;
+    // Поддержка двух форматов:
+    // 1. recurrence = { interval: 4, type: 'months', nextDueDate: '2026-07-01' }
+    // 2. Плоские параметры: recurrenceInterval, recurrenceType, nextDueDate, isRecurring
+    let recurrenceInterval = '';
+    let recurrenceType = '';
+    let nextDueDate = '';
+    let isRecurring = '';
+    
+    if (recurrence) {
+      if (recurrence.interval) {
+        // Формат 1: объект recurrence
+        recurrenceInterval = recurrence.interval;
+        recurrenceType = recurrence.type;
+        nextDueDate = recurrence.nextDueDate;
+        isRecurring = 'TRUE';
+      } else if (recurrence.isRecurring) {
+        // Формат 2: плоские параметры
+        recurrenceInterval = recurrence.recurrenceInterval || '';
+        recurrenceType = recurrence.recurrenceType || '';
+        nextDueDate = recurrence.nextDueDate || '';
+        isRecurring = recurrence.isRecurring === true ? 'TRUE' : (recurrence.isRecurring || '');
+      }
+    }
     
     const task = {
       id: generateId(),
@@ -280,10 +301,10 @@ function addTask(title, plannedDate, assignedTo, recurrence) {
       duration: '',
       plannedDate: plannedDate || '',
       assignedTo: assignedTo || null,
-      recurrenceInterval: isRecurring ? recurrence.interval : '',
-      recurrenceType: isRecurring ? recurrence.type : '',
-      nextDueDate: isRecurring ? recurrence.nextDueDate : '',
-      isRecurring: isRecurring ? 'TRUE' : ''
+      recurrenceInterval: recurrenceInterval,
+      recurrenceType: recurrenceType,
+      nextDueDate: nextDueDate,
+      isRecurring: isRecurring
     };
 
     sheet.appendRow([
