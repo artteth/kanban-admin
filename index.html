@@ -757,6 +757,16 @@
           <div class="date-selected-display" id="dateSelectedDisplay"></div>
         </div>
 
+        <div class="form-group" style="margin-top: 16px;">
+          <label>📎 Вложения:</label>
+          <input type="file" id="taskImageUpload" accept="image/*" capture="environment" style="display:none;" onchange="handleImageUpload(event)" />
+          <button class="btn btn-light" onclick="document.getElementById('taskImageUpload').click()" style="width:100%;margin-top:8px;">
+            📷 Прикрепить фото
+          </button>
+          <div id="imageUploadStatus" style="font-size:13px;color:#888;margin-top:8px;"></div>
+          <div id="taskAttachments" style="margin-top:12px;"></div>
+        </div>
+
         <!-- Custom Date Picker Modal -->
         <div class="date-picker-modal" id="datePickerModal">
           <div class="date-picker-overlay" id="datePickerOverlay"></div>
@@ -1374,6 +1384,13 @@
         <div class="task-assignee">👤 ${escapeHtml(assigneeName)}</div>
         ${task.startDate ? `<div class="task-meta">📅 Создано: ${formatDate(task.startDate)}</div>` : ''}
         ${task.duration ? `<div class="task-meta">⏱️ ${task.duration}</div>` : ''}
+        ${task.attachments && task.attachments.length > 0 ? `
+          <div class="task-attachments" style="margin-top:8px;">
+            ${task.attachments.filter(a => a.type === 'image').map(att => `
+              <img src="${att.url}" style="height:60px;border-radius:6px;margin-right:6px;cursor:pointer;" onclick="window.open('${att.url}', '_blank')" />
+            `).join('')}
+          </div>
+        ` : ''}
         <div class="task-actions">
           ${task.status !== 'todo' ? '<button data-action="back" data-id="' + task.id + '">← Назад</button>' : ''}
           ${task.status !== 'done' ? '<button data-action="forward" data-id="' + task.id + '">Вперёд →</button>' : ''}
@@ -1662,6 +1679,15 @@
         select.value = currentUserId;
       }
 
+      // Устанавливаем currentTaskIdForUpload для нового task
+      currentTaskIdForUpload = null;
+      document.getElementById('taskAttachments').innerHTML = '';
+      document.getElementById('imageUploadStatus').textContent = '';
+
+      textarea.value = '';
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+
       modal.classList.add('show');
       setTimeout(() => textarea.focus(), 100);
     }
@@ -1701,6 +1727,110 @@
         await loadTasks();
       } catch (e) {
         alert('Ошибка при добавлении задачи: ' + e.message);
+      }
+    }
+
+    // ===== Image Upload Functions =====
+    let currentTaskIdForUpload = null;
+
+    async function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      // Проверяем размер (макс 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Файл слишком большой. Максимум 5MB');
+        return;
+      }
+
+      const statusEl = document.getElementById('imageUploadStatus');
+      statusEl.textContent = '⏳ Загрузка...';
+
+      try {
+        // Читаем файл как Base64
+        const base64 = await readFileAsBase64(file);
+
+        // Загружаем в Google Drive
+        const uploadResult = await apiCall('uploadImageToDrive', {
+          base64Data: base64,
+          fileName: file.name || 'image.jpg',
+          taskId: currentTaskIdForUpload || 'temp'
+        });
+
+        if (uploadResult.ok && uploadResult.data) {
+          // Добавляем ссылку в задачу
+          const addResult = await apiCall('addImageToTask', {
+            taskId: currentTaskIdForUpload,
+            imageUrl: uploadResult.data.directUrl,
+            imageName: file.name
+          });
+
+          if (addResult.ok) {
+            statusEl.textContent = '✅ Фото загружено!';
+            renderAttachments(addResult.data);
+            setTimeout(() => {
+              statusEl.textContent = '';
+            }, 3000);
+          }
+        } else {
+          statusEl.textContent = '❌ Ошибка: ' + (uploadResult.error || 'Неизвестная');
+        }
+      } catch (e) {
+        console.error('Image upload error:', e);
+        statusEl.textContent = '❌ Ошибка загрузки';
+      }
+
+      // Очищаем input
+      event.target.value = '';
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderAttachments(attachments) {
+      const container = document.getElementById('taskAttachments');
+      if (!container) return;
+
+      if (!attachments || attachments.length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      container.innerHTML = attachments.map((att, index) => {
+        if (att.type === 'image') {
+          return `
+            <div style="position:relative;display:inline-block;margin:4px;">
+              <img src="${att.url}" style="height:80px;border-radius:8px;cursor:pointer;" onclick="window.open('${att.url}', '_blank')" />
+              <button onclick="removeAttachment(${index})" style="position:absolute;top:-8px;right:-8px;background:#dc3545;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
+            </div>
+          `;
+        }
+        return '';
+      }).join('');
+    }
+
+    async function removeAttachment(index) {
+      if (!currentTaskIdForUpload) return;
+
+      if (!confirm('Удалить это фото?')) return;
+
+      try {
+        const result = await apiCall('removeImageFromTask', {
+          id: currentTaskIdForUpload,
+          index: index
+        });
+
+        if (result.ok) {
+          renderAttachments(result.data);
+        }
+      } catch (e) {
+        alert('Ошибка при удалении: ' + e.message);
       }
     }
 
