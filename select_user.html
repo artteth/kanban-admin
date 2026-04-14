@@ -448,7 +448,7 @@
       var y = now.getFullYear();
       var m = String(now.getMonth() + 1).padStart(2, '0');
       var d = String(now.getDate()).padStart(2, '0');
-      return "" + y + "-${m}-${d}";
+      return "" + y + "-" + m + "-" + d;
     }
 
     function getDateOffsetStr(daysOffset) {
@@ -457,7 +457,7 @@
       var y = date.getFullYear();
       var m = String(date.getMonth() + 1).padStart(2, '0');
       var d = String(date.getDate()).padStart(2, '0');
-      return "" + y + "-${m}-${d}";
+      return "" + y + "-" + m + "-" + d;
     }
 
     function generateId() {
@@ -512,12 +512,11 @@
 
     function apiCall(action, payload) {
       setSyncStatus('syncing', '🔄 Синхронизация...');
-      return apiJsonp(action, payload);
-      } catch (e) {
+      return apiJsonp(action, payload)['catch'](function(e) {
         setSyncStatus('error', '❌ Ошибка сети');
         console.error('API call error:', e);
         throw e;
-      }
+      });
     }
 
     function getUsers() {
@@ -620,15 +619,14 @@ if (users.length === 0) {
         var roleLabel = user.role === 'admin' ? '👑 Админ' : '👤 Пользователь';
         var isSelected = user.userId === selectedUserId ? 'selected' : '';
 
-        html += '<div class="user-card ' + isSelected + '" data-user-id="' + user.userId + '" onclick="selectUser(\'' + user.userId + '\')" ontouchstart="handleTouchStart(event, \'' + user.userId + '\')" ontouchend="handleTouchEnd(event, \'' + user.userId + '\')"><div class="user-avatar">' + avatarLetter + '</div><div class="user-info"><div class="user-name">' + escapeHtml(user.name) + '</div><div class="user-role">' + roleLabel + (user.telegramId ? ' • ' + escapeHtml(user.telegramId) : '') + '</div></div><div class="user-actions">
-              <button class="user-action-btn btn-edit" onclick="event.stopPropagation(); openEditUserModal('${user.userId}')" title="Редактировать">✏️</button>
-              ${user.role !== 'admin' || users.filter(function(u) { return u.role === 'admin').length > 1 ?; }
-                "<button class="user-action-btn btn-delete" onclick="event.stopPropagation(); confirmDeleteUser('${user.userId}')" title="Удалить">🗑️</button>` :
-                ''}
-            </div>
-          </div>
-        `;
-      });
+        html += '<div class="user-card ' + isSelected + '" data-user-id="' + user.userId + '" onclick="selectUser(\'' + user.userId + '\')" ontouchstart="handleTouchStart(event, \'' + user.userId + '\')" ontouchend="handleTouchEnd(event, \'' + user.userId + '\')"><div class="user-avatar">' + avatarLetter + '</div><div class="user-info"><div class="user-name">' + escapeHtml(user.name) + '</div><div class="user-role">' + roleLabel + (user.telegramId ? ' • ' + escapeHtml(user.telegramId) : '') + '</div></div><div class="user-actions">';
+          
+          var canDelete = user.role !== 'admin' || users.filter(function(u) { return u.role === 'admin'; }).length > 1;
+          if (canDelete) {
+            html += '<button class="user-action-btn btn-delete" onclick="event.stopPropagation(); confirmDeleteUser(\'' + user.userId + '\')" title="Удалить">🗑️</button>';
+          }
+          html += '</div></div>';
+        });
 
       html += '</div>';
       container.innerHTML = html;
@@ -643,9 +641,9 @@ if (users.length === 0) {
 
     function handleTouchEnd(event, userId) {
       var card = event.currentTarget;
-      setTimeoutfunction(() 
+      setTimeout(function() {
         card.classList.remove('touch-hover');
-      , 100);
+      }, 100);
       // Выбираем пользователя сразу при отпускании пальца
       selectUser(userId);
     }
@@ -663,7 +661,7 @@ if (users.length === 0) {
 
       localStorage.setItem(CURRENT_USER_KEY, selectedUserId);
 
-      var user = users.find(function(u) { return u.userId === selectedUserId); };
+      var user = users.find(function(u) { return u.userId === selectedUserId; });
       if (user && user.role === 'admin') {
         window.location.href = 'admin.html';
       } else {
@@ -677,14 +675,14 @@ if (users.length === 0) {
       document.getElementById('modalTitle').textContent = 'Новый пользователь';
       document.getElementById('userName').value = '';
       document.getElementById('userTelegram').value = '';
-      document.getElementById('userRole').value = 'user';
+document.getElementById('userRole').value = 'user';
       document.getElementById('userModal').classList.add('show');
-      setTimeoutfunction(() { return document.getElementById('userName').focus(), 100); };
+      setTimeout(function() { document.getElementById('userName').focus(); }, 100);
     }
 
     function openEditUserModal(userId) {
       editingUserId = userId;
-      var user = users.find(function(u) { return u.userId === userId); };
+      var user = users.find(function(u) { return u.userId === userId; });
       if (!user) return;
       
       document.getElementById('modalTitle').textContent = 'Редактирование';
@@ -692,7 +690,20 @@ if (users.length === 0) {
       document.getElementById('userTelegram').value = user.telegramId || '';
       document.getElementById('userRole').value = user.role || 'user';
       document.getElementById('userModal').classList.add('show');
-      setTimeoutfunction(() { return document.getElementById('userName').focus(), 100); };
+      setTimeout(function() { document.getElementById('userName').focus(); }, 100);
+    }
+
+    function openEditUserModal(userId) {
+      editingUserId = userId;
+      var user = users.find(function(u) { return u.userId === userId; });
+      if (!user) return;
+      
+      document.getElementById('modalTitle').textContent = 'Редактирование';
+      document.getElementById('userName').value = user.name || '';
+      document.getElementById('userTelegram').value = user.telegramId || '';
+      document.getElementById('userRole').value = user.role || 'user';
+      document.getElementById('userModal').classList.add('show');
+      setTimeout(function() { document.getElementById('userName').focus(); }, 100);
     }
 
     function closeUserModal() {
