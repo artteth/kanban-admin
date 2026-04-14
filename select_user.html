@@ -422,7 +422,13 @@
   </div>
 
   <script>
-    // ===== GOOGLE SHEETS API CONFIGURATION =====
+    alert('TEST 1');
+    var x = 1;
+    alert('TEST 2 - x=' + x);
+    var testFn = function() { alert('TEST 3'); };
+    testFn();
+    alert('TEST 4');
+    
     window.onerror = function(msg, url, line, col, error) {
       alert('JS Error: ' + msg + ' line:' + line);
       return true;
