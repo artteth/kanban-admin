@@ -227,6 +227,9 @@
       border-radius: 12px;
       padding: 16px;
       min-height: 500px;
+      -webkit-column-break-inside: avoid;
+      column-break-inside: avoid;
+      page-break-inside: avoid;
     }
     
     .column-header {
@@ -804,1075 +807,1502 @@
   </div>
 
   <script>
-    // ===== GOOGLE SHEETS API CONFIGURATION =====
-    var API_URL = 'https://script.google.com/macros/s/AKfycbwOmfbiY6qcoZtJJFyazXATEQKiVakQoFvRtVBwJbtGIFQUlhxFSiXlL89mI2_cxEg0/exec';
+"use strict";
 
-    var CURRENT_USER_KEY = 'kanban_current_user_v2';
-
-    // Sync status management
-    function setSyncStatus(status, message) {
-      var el = document.getElementById('syncStatus');
-      if (!el) return;
-      el.className = 'sync-status ' + status;
-      el.textContent = message;
-    }
-
-    function getTodayStr() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-
-    function getDateOffsetStr(daysOffset) {
-      const date = new Date();
-      date.setDate(date.getDate() + daysOffset);
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
-
-    function getDateOffsetStrFrom(baseStr, offsetDays) {
-      const [y, m, day] = baseStr.split('-').map(Number);
-      const d = new Date(y, m - 1, day, 12, 0, 0);
-      d.setDate(d.getDate() + offsetDays);
-      const y2 = d.getFullYear();
-      const m2 = String(d.getMonth() + 1).padStart(2, '0');
-      const d2 = String(d.getDate()).padStart(2, '0');
-      return `${y2}-${m2}-${d2}`;
-    }
-
-    function formatDate(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      const date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
-      if (isNaN(date.getTime())) return '';
-      return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-    }
-
-    function formatDateWithDay(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      const date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
-      if (isNaN(date.getTime())) return '';
-      return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-    }
-
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    function generateId() {
-      return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    // ===== Date Picker State =====
-    let selectedPlannedDays = null;
-    let pickerYear, pickerMonth;
-
-    // ===== Font Settings Config =====
-    const FONT_SETTINGS = {
-      title: {
-        storageSizeKey: 'taskTitleFontSize',
-        storageBoldKey: 'taskTitleFontBold',
-        cssSizeVar: '--task-title-font-size',
-        cssWeightVar: '--task-title-font-weight',
-        defaultSize: 15,
-        min: 12,
-        max: 40,
-        valueElementId: 'fontSizeValueTitle',
-        boldButtonId: 'boldBtnTitle'
-      },
-      meta: {
-        storageSizeKey: 'taskMetaFontSize',
-        storageBoldKey: 'taskMetaFontBold',
-        cssSizeVar: '--task-meta-font-size',
-        cssWeightVar: '--task-meta-font-weight',
-        defaultSize: 12,
-        min: 10,
-        max: 30,
-        valueElementId: 'fontSizeValueMeta',
-        boldButtonId: 'boldBtnMeta'
-      },
-      planned: {
-        storageSizeKey: 'taskPlannedFontSize',
-        storageBoldKey: 'taskPlannedFontBold',
-        cssSizeVar: '--task-planned-font-size',
-        cssWeightVar: '--task-planned-font-weight',
-        defaultSize: 12,
-        min: 10,
-        max: 30,
-        valueElementId: 'fontSizeValuePlanned',
-        boldButtonId: 'boldBtnPlanned'
-      }
-    };
-
-    // ===== Settings Functions =====
-    function toggleSettings() {
-      const dropdown = document.getElementById('settingsDropdown');
-      dropdown.classList.toggle('show');
-    }
-
-    function changeFontSize(type, delta) {
-      const cfg = FONT_SETTINGS[type];
-      if (!cfg) return;
-
-      const currentSize = parseInt(localStorage.getItem(cfg.storageSizeKey)) || cfg.defaultSize;
-      let newSize = currentSize + delta;
-      newSize = Math.max(cfg.min, Math.min(cfg.max, newSize));
-      setFontSize(type, newSize);
-    }
-
-    function setFontSize(type, size) {
-      const cfg = FONT_SETTINGS[type];
-      if (!cfg) return;
-
-      const root = document.documentElement;
-      root.style.setProperty(cfg.cssSizeVar, size + 'px');
-      localStorage.setItem(cfg.storageSizeKey, size);
-      updateFontSizeDisplay(type, size);
-    }
-
-    function updateFontSizeDisplay(type, size) {
-      const cfg = FONT_SETTINGS[type];
-      if (!cfg) return;
-
-      const valueEl = document.getElementById(cfg.valueElementId);
-      if (valueEl) {
-        valueEl.textContent = size + 'px';
-      }
-    }
-
-    function resetFontSettings() {
-      Object.keys(FONT_SETTINGS).forEach(type => {
-        const cfg = FONT_SETTINGS[type];
-        setFontSize(type, cfg.defaultSize);
-        localStorage.setItem(cfg.storageBoldKey, 'false');
-        const root = document.documentElement;
-        root.style.setProperty(cfg.cssWeightVar, 'normal');
-        updateBoldButton(type, false);
-      });
-    }
-
-    function toggleBold(type) {
-      const cfg = FONT_SETTINGS[type];
-      if (!cfg) return;
-
-      const isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
-      const newBold = !isBold;
-      localStorage.setItem(cfg.storageBoldKey, newBold);
-      const root = document.documentElement;
-      root.style.setProperty(cfg.cssWeightVar, newBold ? 'bold' : 'normal');
-      updateBoldButton(type, newBold);
-    }
-
-    function updateBoldButton(type, isBold) {
-      const cfg = FONT_SETTINGS[type];
-      if (!cfg) return;
-
-      const btn = document.getElementById(cfg.boldButtonId);
-      if (btn) {
-        btn.classList.toggle('active', isBold);
-      }
-    }
-
-    function loadFontSettings() {
-      Object.keys(FONT_SETTINGS).forEach(type => {
-        const cfg = FONT_SETTINGS[type];
-
-        const savedSize = localStorage.getItem(cfg.storageSizeKey);
-        const sizeToApply = savedSize ? parseInt(savedSize) : cfg.defaultSize;
-        setFontSize(type, sizeToApply);
-
-        const isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
-        const root = document.documentElement;
-        root.style.setProperty(cfg.cssWeightVar, isBold ? 'bold' : 'normal');
-        updateBoldButton(type, isBold);
-      });
-    }
-
-    function updateColumnColors() {
-      const colors = {
-        todo: {
-          header: document.getElementById('todoHeaderColor').value,
-          bg: document.getElementById('todoBgColor').value
-        },
-        inProgress: {
-          header: document.getElementById('inProgressHeaderColor').value,
-          bg: document.getElementById('inProgressBgColor').value
-        },
-        done: {
-          header: document.getElementById('doneHeaderColor').value,
-          bg: document.getElementById('doneBgColor').value
+function _regenerator() {
+  /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */var e,
+    t,
+    r = "function" == typeof Symbol ? Symbol : {},
+    n = r.iterator || "@@iterator",
+    o = r.toStringTag || "@@toStringTag";
+  function i(r, n, o, i) {
+    var c = n && n.prototype instanceof Generator ? n : Generator,
+      u = Object.create(c.prototype);
+    return _regeneratorDefine2(u, "_invoke", function (r, n, o) {
+      var i,
+        c,
+        u,
+        f = 0,
+        p = o || [],
+        y = !1,
+        G = {
+          p: 0,
+          n: 0,
+          v: e,
+          a: d,
+          f: d.bind(e, 4),
+          d: function d(t, r) {
+            return i = t, c = 0, u = e, G.n = r, a;
+          }
+        };
+      function d(r, n) {
+        for (c = r, u = n, t = 0; !y && f && !o && t < p.length; t++) {
+          var o,
+            i = p[t],
+            d = G.p,
+            l = i[2];
+          r > 3 ? (o = l === n) && (u = i[(c = i[4]) ? 5 : (c = 3, 3)], i[4] = i[5] = e) : i[0] <= d && ((o = r < 2 && d < i[1]) ? (c = 0, G.v = n, G.n = i[1]) : d < l && (o = r < 3 || i[0] > n || n > l) && (i[4] = r, i[5] = n, G.n = l, c = 0));
         }
+        if (o || r > 1) return a;
+        throw y = !0, n;
+      }
+      return function (o, p, l) {
+        if (f > 1) throw TypeError("Generator is already running");
+        for (y && 1 === p && d(p, l), c = p, u = l; (t = c < 2 ? e : u) || !y;) {
+          i || (c ? c < 3 ? (c > 1 && (G.n = -1), d(c, u)) : G.n = u : G.v = u);
+          try {
+            if (f = 2, i) {
+              if (c || (o = "next"), t = i[o]) {
+                if (!(t = t.call(i, u))) throw TypeError("iterator result is not an object");
+                if (!t.done) return t;
+                u = t.value, c < 2 && (c = 0);
+              } else 1 === c && (t = i["return"]) && t.call(i), c < 2 && (u = TypeError("The iterator does not provide a '" + o + "' method"), c = 1);
+              i = e;
+            } else if ((t = (y = G.n < 0) ? u : r.call(n, G)) !== a) break;
+          } catch (t) {
+            i = e, c = 1, u = t;
+          } finally {
+            f = 1;
+          }
+        }
+        return {
+          value: t,
+          done: y
+        };
       };
-
-      localStorage.setItem('columnColors', JSON.stringify(colors));
-
-      // Apply colors
-      const root = document.documentElement;
-      root.style.setProperty('--bg-todo-header', colors.todo.header);
-      root.style.setProperty('--bg-progress-header', colors.inProgress.header);
-      root.style.setProperty('--bg-done-header', colors.done.header);
-      root.style.setProperty('--bg-todo', colors.todo.bg);
-      root.style.setProperty('--bg-progress', colors.inProgress.bg);
-      root.style.setProperty('--bg-done', colors.done.bg);
+    }(r, o, i), !0), u;
+  }
+  var a = {};
+  function Generator() {}
+  function GeneratorFunction() {}
+  function GeneratorFunctionPrototype() {}
+  t = Object.getPrototypeOf;
+  var c = [][n] ? t(t([][n]())) : (_regeneratorDefine2(t = {}, n, function () {
+      return this;
+    }), t),
+    u = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(c);
+  function f(e) {
+    return Object.setPrototypeOf ? Object.setPrototypeOf(e, GeneratorFunctionPrototype) : (e.__proto__ = GeneratorFunctionPrototype, _regeneratorDefine2(e, o, "GeneratorFunction")), e.prototype = Object.create(u), e;
+  }
+  return GeneratorFunction.prototype = GeneratorFunctionPrototype, _regeneratorDefine2(u, "constructor", GeneratorFunctionPrototype), _regeneratorDefine2(GeneratorFunctionPrototype, "constructor", GeneratorFunction), GeneratorFunction.displayName = "GeneratorFunction", _regeneratorDefine2(GeneratorFunctionPrototype, o, "GeneratorFunction"), _regeneratorDefine2(u), _regeneratorDefine2(u, o, "Generator"), _regeneratorDefine2(u, n, function () {
+    return this;
+  }), _regeneratorDefine2(u, "toString", function () {
+    return "[object Generator]";
+  }), (_regenerator = function _regenerator() {
+    return {
+      w: i,
+      m: f
+    };
+  })();
+}
+function _regeneratorDefine2(e, r, n, t) {
+  var i = Object.defineProperty;
+  try {
+    i({}, "", {});
+  } catch (e) {
+    i = 0;
+  }
+  _regeneratorDefine2 = function _regeneratorDefine(e, r, n, t) {
+    function o(r, n) {
+      _regeneratorDefine2(e, r, function (e) {
+        return this._invoke(r, n, e);
+      });
     }
-
-    function loadColumnColors() {
-      const saved = localStorage.getItem('columnColors');
-      if (saved) {
-        const colors = JSON.parse(saved);
-        document.getElementById('todoHeaderColor').value = colors.todo.header;
-        document.getElementById('todoBgColor').value = colors.todo.bg;
-        document.getElementById('inProgressHeaderColor').value = colors.inProgress.header;
-        document.getElementById('inProgressBgColor').value = colors.inProgress.bg;
-        document.getElementById('doneHeaderColor').value = colors.done.header;
-        document.getElementById('doneBgColor').value = colors.done.bg;
-        updateColumnColors();
+    r ? i ? i(e, r, {
+      value: n,
+      enumerable: !t,
+      configurable: !t,
+      writable: !t
+    }) : e[r] = n : (o("next", 0), o("throw", 1), o("return", 2));
+  }, _regeneratorDefine2(e, r, n, t);
+}
+function _slicedToArray(r, e) {
+  return _arrayWithHoles(r) || _iterableToArrayLimit(r, e) || _unsupportedIterableToArray(r, e) || _nonIterableRest();
+}
+function _nonIterableRest() {
+  throw new TypeError("Invalid attempt to destructure non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
+}
+function _unsupportedIterableToArray(r, a) {
+  if (r) {
+    if ("string" == typeof r) return _arrayLikeToArray(r, a);
+    var t = {}.toString.call(r).slice(8, -1);
+    return "Object" === t && r.constructor && (t = r.constructor.name), "Map" === t || "Set" === t ? Array.from(r) : "Arguments" === t || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(t) ? _arrayLikeToArray(r, a) : void 0;
+  }
+}
+function _arrayLikeToArray(r, a) {
+  (null == a || a > r.length) && (a = r.length);
+  for (var e = 0, n = Array(a); e < a; e++) n[e] = r[e];
+  return n;
+}
+function _iterableToArrayLimit(r, l) {
+  var t = null == r ? null : "undefined" != typeof Symbol && r[Symbol.iterator] || r["@@iterator"];
+  if (null != t) {
+    var e,
+      n,
+      i,
+      u,
+      a = [],
+      f = !0,
+      o = !1;
+    try {
+      if (i = (t = t.call(r)).next, 0 === l) {
+        if (Object(t) !== t) return;
+        f = !1;
+      } else for (; !(f = (e = i.call(t)).done) && (a.push(e.value), a.length !== l); f = !0);
+    } catch (r) {
+      o = !0, n = r;
+    } finally {
+      try {
+        if (!f && null != t["return"] && (u = t["return"](), Object(u) !== u)) return;
+      } finally {
+        if (o) throw n;
       }
     }
-
-    // Close settings when clicking outside
-    document.addEventListener('click', function(e) {
-      const settingsContainer = document.querySelector('.settings-container');
-      const dropdown = document.getElementById('settingsDropdown');
-      if (settingsContainer && !settingsContainer.contains(e.target)) {
-        dropdown.classList.remove('show');
+    return a;
+  }
+}
+function _arrayWithHoles(r) {
+  if (Array.isArray(r)) return r;
+}
+function asyncGeneratorStep(n, t, e, r, o, a, c) {
+  try {
+    var i = n[a](c),
+      u = i.value;
+  } catch (n) {
+    return void e(n);
+  }
+  i.done ? t(u) : Promise.resolve(u).then(r, o);
+}
+function _asyncToGenerator(n) {
+  return function () {
+    var t = this,
+      e = arguments;
+    return new Promise(function (r, o) {
+      var a = n.apply(t, e);
+      function _next(n) {
+        asyncGeneratorStep(a, r, o, _next, _throw, "next", n);
       }
+      function _throw(n) {
+        asyncGeneratorStep(a, r, o, _next, _throw, "throw", n);
+      }
+      _next(void 0);
+    });
+  };
+}
+// ===== GOOGLE SHEETS API CONFIGURATION =====
+var API_URL = 'https://script.google.com/macros/s/AKfycbwOmfbiY6qcoZtJJFyazXATEQKiVakQoFvRtVBwJbtGIFQUlhxFSiXlL89mI2_cxEg0/exec';
+var CURRENT_USER_KEY = 'kanban_current_user_v2';
+
+// Sync status management
+function setSyncStatus(status, message) {
+  var el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.className = 'sync-status ' + status;
+  el.textContent = message;
+}
+function getTodayStr() {
+  var now = new Date();
+  var y = now.getFullYear();
+  var m = String(now.getMonth() + 1).padStart(2, '0');
+  var d = String(now.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+function getDateOffsetStr(daysOffset) {
+  var date = new Date();
+  date.setDate(date.getDate() + daysOffset);
+  var y = date.getFullYear();
+  var m = String(date.getMonth() + 1).padStart(2, '0');
+  var d = String(date.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+function getDateOffsetStrFrom(baseStr, offsetDays) {
+  var parts = baseStr.split('-').map(Number);
+  var y = parts[0];
+  var m = parts[1];
+  var day = parts[2];
+  var d = new Date(y, m - 1, day, 12, 0, 0);
+  d.setDate(d.getDate() + offsetDays);
+  var y2 = d.getFullYear();
+  var m2 = String(d.getMonth() + 1).padStart(2, '0');
+  var d2 = String(d.getDate()).padStart(2, '0');
+  return y2 + '-' + m2 + '-' + d2;
+}
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  var parts = dateStr.split('-');
+  var date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long'
+  });
+}
+function formatDateWithDay(dateStr) {
+  if (!dateStr) return '';
+  var parts = dateStr.split('-');
+  var date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('ru-RU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  });
+}
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+function generateId() {
+  return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// ===== Date Picker State =====
+var selectedPlannedDays = null;
+var pickerYear, pickerMonth;
+
+// ===== Font Settings Config =====
+var FONT_SETTINGS = {
+  title: {
+    storageSizeKey: 'taskTitleFontSize',
+    storageBoldKey: 'taskTitleFontBold',
+    cssSizeVar: '--task-title-font-size',
+    cssWeightVar: '--task-title-font-weight',
+    defaultSize: 15,
+    min: 12,
+    max: 40,
+    valueElementId: 'fontSizeValueTitle',
+    boldButtonId: 'boldBtnTitle'
+  },
+  meta: {
+    storageSizeKey: 'taskMetaFontSize',
+    storageBoldKey: 'taskMetaFontBold',
+    cssSizeVar: '--task-meta-font-size',
+    cssWeightVar: '--task-meta-font-weight',
+    defaultSize: 12,
+    min: 10,
+    max: 30,
+    valueElementId: 'fontSizeValueMeta',
+    boldButtonId: 'boldBtnMeta'
+  },
+  planned: {
+    storageSizeKey: 'taskPlannedFontSize',
+    storageBoldKey: 'taskPlannedFontBold',
+    cssSizeVar: '--task-planned-font-size',
+    cssWeightVar: '--task-planned-font-weight',
+    defaultSize: 12,
+    min: 10,
+    max: 30,
+    valueElementId: 'fontSizeValuePlanned',
+    boldButtonId: 'boldBtnPlanned'
+  }
+};
+
+// ===== Settings Functions =====
+function toggleSettings() {
+  var dropdown = document.getElementById('settingsDropdown');
+  dropdown.classList.toggle('show');
+}
+function changeFontSize(type, delta) {
+  var cfg = FONT_SETTINGS[type];
+  if (!cfg) return;
+  var currentSize = parseInt(localStorage.getItem(cfg.storageSizeKey)) || cfg.defaultSize;
+  var newSize = currentSize + delta;
+  newSize = Math.max(cfg.min, Math.min(cfg.max, newSize));
+  setFontSize(type, newSize);
+}
+function setFontSize(type, size) {
+  var cfg = FONT_SETTINGS[type];
+  if (!cfg) return;
+  var root = document.documentElement;
+  root.style.setProperty(cfg.cssSizeVar, size + 'px');
+  localStorage.setItem(cfg.storageSizeKey, size);
+  updateFontSizeDisplay(type, size);
+}
+function updateFontSizeDisplay(type, size) {
+  var cfg = FONT_SETTINGS[type];
+  if (!cfg) return;
+  var valueEl = document.getElementById(cfg.valueElementId);
+  if (valueEl) {
+    valueEl.textContent = size + 'px';
+  }
+}
+function resetFontSettings() {
+  Object.keys(FONT_SETTINGS).forEach(function (type) {
+    var cfg = FONT_SETTINGS[type];
+    setFontSize(type, cfg.defaultSize);
+    localStorage.setItem(cfg.storageBoldKey, 'false');
+    var root = document.documentElement;
+    root.style.setProperty(cfg.cssWeightVar, 'normal');
+    updateBoldButton(type, false);
+  });
+}
+function toggleBold(type) {
+  var cfg = FONT_SETTINGS[type];
+  if (!cfg) return;
+  var isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
+  var newBold = !isBold;
+  localStorage.setItem(cfg.storageBoldKey, newBold);
+  var root = document.documentElement;
+  root.style.setProperty(cfg.cssWeightVar, newBold ? 'bold' : 'normal');
+  updateBoldButton(type, newBold);
+}
+function updateBoldButton(type, isBold) {
+  var cfg = FONT_SETTINGS[type];
+  if (!cfg) return;
+  var btn = document.getElementById(cfg.boldButtonId);
+  if (btn) {
+    btn.classList.toggle('active', isBold);
+  }
+}
+function loadFontSettings() {
+  Object.keys(FONT_SETTINGS).forEach(function (type) {
+    var cfg = FONT_SETTINGS[type];
+    var savedSize = localStorage.getItem(cfg.storageSizeKey);
+    var sizeToApply = savedSize ? parseInt(savedSize) : cfg.defaultSize;
+    setFontSize(type, sizeToApply);
+    var isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
+    var root = document.documentElement;
+    root.style.setProperty(cfg.cssWeightVar, isBold ? 'bold' : 'normal');
+    updateBoldButton(type, isBold);
+  });
+}
+function updateColumnColors() {
+  var colors = {
+    todo: {
+      header: document.getElementById('todoHeaderColor').value,
+      bg: document.getElementById('todoBgColor').value
+    },
+    inProgress: {
+      header: document.getElementById('inProgressHeaderColor').value,
+      bg: document.getElementById('inProgressBgColor').value
+    },
+    done: {
+      header: document.getElementById('doneHeaderColor').value,
+      bg: document.getElementById('doneBgColor').value
+    }
+  };
+  localStorage.setItem('columnColors', JSON.stringify(colors));
+  var root = document.documentElement;
+  root.style.setProperty('--bg-todo-header', colors.todo.header);
+  root.style.setProperty('--bg-progress-header', colors.inProgress.header);
+  root.style.setProperty('--bg-done-header', colors.done.header);
+  root.style.setProperty('--bg-todo', colors.todo.bg);
+  root.style.setProperty('--bg-progress', colors.inProgress.bg);
+  root.style.setProperty('--bg-done', colors.done.bg);
+}
+function loadColumnColors() {
+  var saved = localStorage.getItem('columnColors');
+  if (saved) {
+    var colors = JSON.parse(saved);
+    document.getElementById('todoHeaderColor').value = colors.todo.header;
+    document.getElementById('todoBgColor').value = colors.todo.bg;
+    document.getElementById('inProgressHeaderColor').value = colors.inProgress.header;
+    document.getElementById('inProgressBgColor').value = colors.inProgress.bg;
+    document.getElementById('doneHeaderColor').value = colors.done.header;
+    document.getElementById('doneBgColor').value = colors.done.bg;
+    updateColumnColors();
+  }
+}
+document.addEventListener('click', function (e) {
+  var settingsContainer = document.querySelector('.settings-container');
+  var dropdown = document.getElementById('settingsDropdown');
+  if (settingsContainer && !settingsContainer.contains(e.target)) {
+    dropdown.classList.remove('show');
+  }
+});
+
+// ===== GOOGLE SHEETS API =====
+function apiJsonp(action) {
+  var params = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+  return new Promise(function (resolve, reject) {
+    var callbackName = 'jsonp_callback_' + Date.now();
+    var urlParams = "mode=jsonp&action=".concat(encodeURIComponent(action), "&callback=").concat(callbackName);
+    for (var key in params) {
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+        urlParams += "&".concat(encodeURIComponent(key), "=").concat(encodeURIComponent(params[key]));
+      }
+    }
+    var url = "".concat(API_URL, "?").concat(urlParams);
+    var script = document.createElement('script');
+    script.src = url;
+    script.onerror = function () {
+      setSyncStatus('error', '❌ Ошибка сети');
+      reject(new Error('JSONP request failed'));
+    };
+    window[callbackName] = function (response) {
+      if (response && response.ok) {
+        setSyncStatus('ready', '✅ Синхронизировано');
+        setTimeout(function () {
+          return setSyncStatus('ready', '');
+        }, 3000);
+        resolve(response.data || response);
+      } else {
+        setSyncStatus('error', '❌ Ошибка: ' + ((response == null ? void 0 : response.error) || 'Неизвестная'));
+        reject(new Error((response == null ? void 0 : response.error) || 'API error'));
+      }
+      delete window[callbackName];
+      document.body.removeChild(script);
+    };
+    document.body.appendChild(script);
+  });
+}
+function apiCall(_x) {
+  return _apiCall.apply(this, arguments);
+}
+function _apiCall() {
+  _apiCall = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee(action) {
+    var payload,
+      _args = arguments,
+      _t;
+    return _regenerator().w(function (_context) {
+      while (1) switch (_context.p = _context.n) {
+        case 0:
+          payload = _args.length > 1 && _args[1] !== undefined ? _args[1] : {};
+          setSyncStatus('syncing', '🔄 Синхронизация...');
+          _context.p = 1;
+          _context.n = 2;
+          return apiJsonp(action, payload);
+        case 2:
+          return _context.a(2, _context.v);
+        case 3:
+          _context.p = 3;
+          _t = _context.v;
+          setSyncStatus('error', '❌ Ошибка сети');
+          console.error('API call error:', _t);
+          throw _t;
+        case 4:
+          return _context.a(2);
+      }
+    }, _callee, null, [[1, 3]]);
+  }));
+  return _apiCall.apply(this, arguments);
+}
+function getUsers() {
+  return _getUsers.apply(this, arguments);
+}
+function _getUsers() {
+  _getUsers = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee2() {
+    var response, result, _t2;
+    return _regenerator().w(function (_context2) {
+      while (1) switch (_context2.p = _context2.n) {
+        case 0:
+          _context2.p = 0;
+          _context2.n = 1;
+          return fetch(API_URL + '?mode=tg-api&action=getUsers');
+        case 1:
+          response = _context2.v;
+          _context2.n = 2;
+          return response.json();
+        case 2:
+          result = _context2.v;
+          return _context2.a(2, result.ok ? result.data || [] : []);
+        case 3:
+          _context2.p = 3;
+          _t2 = _context2.v;
+          console.error('getUsers error:', _t2);
+          return _context2.a(2, []);
+      }
+    }, _callee2, null, [[0, 3]]);
+  }));
+  return _getUsers.apply(this, arguments);
+}
+function getTasks() {
+  return _getTasks.apply(this, arguments);
+}
+function _getTasks() {
+  _getTasks = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee3() {
+    var userId,
+      params,
+      result,
+      _args3 = arguments,
+      _t3;
+    return _regenerator().w(function (_context3) {
+      while (1) switch (_context3.p = _context3.n) {
+        case 0:
+          userId = _args3.length > 0 && _args3[0] !== undefined ? _args3[0] : null;
+          _context3.p = 1;
+          params = {};
+          if (userId && userId !== 'admin') {
+            params.userId = userId;
+          }
+          _context3.n = 2;
+          return apiJsonp('getTasks', params);
+        case 2:
+          result = _context3.v;
+          return _context3.a(2, Array.isArray(result) ? result : result.ok ? result.data || [] : []);
+        case 3:
+          _context3.p = 3;
+          _t3 = _context3.v;
+          console.error('getTasks error:', _t3);
+          return _context3.a(2, []);
+      }
+    }, _callee3, null, [[1, 3]]);
+  }));
+  return _getTasks.apply(this, arguments);
+}
+function addTask(_x2, _x3, _x4) {
+  return _addTask.apply(this, arguments);
+}
+function _addTask() {
+  _addTask = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee4(title, plannedDate, assignedTo) {
+    var result, _t4;
+    return _regenerator().w(function (_context4) {
+      while (1) switch (_context4.p = _context4.n) {
+        case 0:
+          _context4.p = 0;
+          _context4.n = 1;
+          return apiCall('addTask', {
+            title: title,
+            plannedDate: plannedDate || '',
+            assignedTo: assignedTo
+          });
+        case 1:
+          result = _context4.v;
+          return _context4.a(2, result);
+        case 2:
+          _context4.p = 2;
+          _t4 = _context4.v;
+          console.error('addTask error:', _t4);
+          throw _t4;
+        case 3:
+          return _context4.a(2);
+      }
+    }, _callee4, null, [[0, 2]]);
+  }));
+  return _addTask.apply(this, arguments);
+}
+function updateTaskStatus(_x5, _x6) {
+  return _updateTaskStatus.apply(this, arguments);
+}
+function _updateTaskStatus() {
+  _updateTaskStatus = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee5(taskId, newStatus) {
+    var result, _t5;
+    return _regenerator().w(function (_context5) {
+      while (1) switch (_context5.p = _context5.n) {
+        case 0:
+          _context5.p = 0;
+          _context5.n = 1;
+          return apiCall('updateStatus', {
+            id: taskId,
+            status: newStatus
+          });
+        case 1:
+          result = _context5.v;
+          return _context5.a(2, result);
+        case 2:
+          _context5.p = 2;
+          _t5 = _context5.v;
+          console.error('updateTaskStatus error:', _t5);
+          throw _t5;
+        case 3:
+          return _context5.a(2);
+      }
+    }, _callee5, null, [[0, 2]]);
+  }));
+  return _updateTaskStatus.apply(this, arguments);
+}
+function deleteTask(_x7) {
+  return _deleteTask.apply(this, arguments);
+} // ===== State =====
+function _deleteTask() {
+  _deleteTask = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee6(taskId) {
+    var result, _t6;
+    return _regenerator().w(function (_context6) {
+      while (1) switch (_context6.p = _context6.n) {
+        case 0:
+          _context6.p = 0;
+          _context6.n = 1;
+          return apiCall('deleteTask', {
+            id: taskId
+          });
+        case 1:
+          result = _context6.v;
+          return _context6.a(2, result);
+        case 2:
+          _context6.p = 2;
+          _t6 = _context6.v;
+          console.error('deleteTask error:', _t6);
+          throw _t6;
+        case 3:
+          return _context6.a(2);
+      }
+    }, _callee6, null, [[0, 2]]);
+  }));
+  return _deleteTask.apply(this, arguments);
+}
+var tasks = [];
+var currentUserId = null;
+var users = [];
+var sortState = {
+  'todo': null,
+  'in-progress': null,
+  'done': null
+};
+var pendingTaskIds = new Set();
+var AUTO_REFRESH_SECONDS = 30;
+var autoRefreshInterval = null;
+var statusLabels = {
+  'todo': '📝 Задания',
+  'in-progress': '🔄 В работе',
+  'done': '✅ Готово'
+};
+
+// ===== Load Data =====
+function loadUser() {
+  return _loadUser.apply(this, arguments);
+}
+function _loadUser() {
+  _loadUser = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee7() {
+    var urlParams, currentUser;
+    return _regenerator().w(function (_context7) {
+      while (1) switch (_context7.n) {
+        case 0:
+          urlParams = new URLSearchParams(window.location.search);
+          currentUserId = urlParams.get('userId') || localStorage.getItem(CURRENT_USER_KEY);
+          if (currentUserId) {
+            _context7.n = 1;
+            break;
+          }
+          window.location.href = 'select_user.html';
+          return _context7.a(2);
+        case 1:
+          setSyncStatus('syncing', '🔄 Загрузка пользователей...');
+          _context7.n = 2;
+          return getUsers();
+        case 2:
+          users = _context7.v;
+          currentUser = users.find(function (u) {
+            return u.userId === currentUserId;
+          });
+          if (currentUser) {
+            document.getElementById('userBadge').textContent = '👤 ' + currentUser.name + (currentUser.role === 'admin' ? ' (Админ)' : '');
+          }
+          _context7.n = 3;
+          return loadTasks();
+        case 3:
+          return _context7.a(2);
+      }
+    }, _callee7);
+  }));
+  return _loadUser.apply(this, arguments);
+}
+function loadTasks() {
+  return _loadTasks.apply(this, arguments);
+}
+function _loadTasks() {
+  _loadTasks = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee8() {
+    return _regenerator().w(function (_context8) {
+      while (1) switch (_context8.n) {
+        case 0:
+          setSyncStatus('syncing', '🔄 Загрузка задач...');
+          _context8.n = 1;
+          return getTasks(currentUserId === 'admin' ? 'admin' : currentUserId);
+        case 1:
+          tasks = _context8.v;
+          renderBoard();
+        case 2:
+          return _context8.a(2);
+      }
+    }, _callee8);
+  }));
+  return _loadTasks.apply(this, arguments);
+}
+function startAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+  }
+  autoRefreshInterval = setInterval(function () {
+    console.log('Auto-refreshing tasks...');
+    getTasks(currentUserId === 'admin' ? 'admin' : currentUserId).then(function (newTasks) {
+      if (JSON.stringify(newTasks) !== JSON.stringify(tasks)) {
+        console.log('Tasks changed, updating board...');
+        tasks = newTasks;
+        renderBoard();
+        setSyncStatus('ready', '✅ Обновлено');
+        setTimeout(function () {
+          return setSyncStatus('ready', '');
+        }, 2000);
+      }
+    })["catch"](function (e) {
+      return console.error('Auto-refresh error:', e);
+    });
+  }, AUTO_REFRESH_SECONDS * 1000);
+  console.log('Auto-refresh started (every ' + AUTO_REFRESH_SECONDS + 's)');
+}
+function stopAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
+}
+
+// ===== Board Rendering =====
+function renderBoard() {
+  var board = document.getElementById('board');
+  board.innerHTML = "\n        <div class=\"column todo\" data-status=\"todo\">\n          <div class=\"column-header\">\n            <span>".concat(statusLabels['todo'], "<span class=\"task-count\" id=\"countTodo\">0</span></span>\n            <button class=\"sort-btn\" data-status=\"todo\" onclick=\"sortTasks('todo')\">\uD83D\uDCC5\u2191\u2193</button>\n          </div>\n          <div class=\"task-list\" id=\"todo-tasks\"></div>\n        </div>\n        <div class=\"column in-progress\" data-status=\"in-progress\">\n          <div class=\"column-header\">\n            <span>").concat(statusLabels['in-progress'], "<span class=\"task-count\" id=\"countInProgress\">0</span></span>\n            <button class=\"sort-btn\" data-status=\"in-progress\" onclick=\"sortTasks('in-progress')\">\uD83D\uDCC5\u2191\u2193</button>\n          </div>\n          <div class=\"task-list\" id=\"in-progress-tasks\"></div>\n        </div>\n        <div class=\"column done\" data-status=\"done\">\n          <div class=\"column-header\">\n            <span>").concat(statusLabels['done'], "<span class=\"task-count\" id=\"countDone\">0</span></span>\n            <button class=\"sort-btn\" data-status=\"done\" onclick=\"sortTasks('done')\">\uD83D\uDCC5\u2191\u2193</button>\n          </div>\n          <div class=\"task-list\" id=\"done-tasks\"></div>\n        </div>\n      ");
+
+  // Sort and filter tasks с приоритетами дат
+  var tasksToRender = [].concat(tasks);
+  ['todo', 'in-progress'].forEach(function (status) {
+    var statusTasks = tasksToRender.filter(function (t) {
+      return t.status === status;
+    });
+    var today = getTodayStr();
+    var activeGroup = statusTasks.filter(function (t) {
+      return t.plannedDate && t.plannedDate <= today;
+    });
+    var futureGroup = statusTasks.filter(function (t) {
+      return t.plannedDate && t.plannedDate > today;
+    });
+    var noDateGroup = statusTasks.filter(function (t) {
+      return !t.plannedDate;
     });
 
-    // ===== GOOGLE SHEETS API =====
-    function apiJsonp(action, params = {}) {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'jsonp_callback_' + Date.now();
-        let urlParams = `mode=jsonp&action=${encodeURIComponent(action)}&callback=${callbackName}`;
-        for (const key in params) {
-          if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-            urlParams += `&${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`;
+    // Split activeGroup into overdue and today (today first, then overdue by date)
+    var overdueGroup = activeGroup.filter(function (t) {
+      return t.plannedDate < today;
+    });
+    var todayGroup = activeGroup.filter(function (t) {
+      return t.plannedDate === today;
+    });
+    overdueGroup.sort(function (a, b) {
+      return a.plannedDate.localeCompare(b.plannedDate);
+    });
+    todayGroup.sort(function (a, b) {
+      return a.plannedDate.localeCompare(b.plannedDate);
+    });
+    futureGroup.sort(function (a, b) {
+      return a.plannedDate.localeCompare(b.plannedDate);
+    });
+    if (sortState[status]) {
+      var sortFn = function sortFn(a, b) {
+        var dateA = a.startDate ? new Date(a.startDate) : new Date(0);
+        var dateB = b.startDate ? new Date(b.startDate) : new Date(0);
+        return sortState[status] === 'asc' ? dateA - dateB : dateB - dateA;
+      };
+      todayGroup.sort(sortFn);
+      overdueGroup.sort(sortFn);
+      futureGroup.sort(sortFn);
+      noDateGroup.sort(sortFn);
+    }
+
+    // Приоритет: СЕГОДНЯ → ПРОСРОЧЕНО → БУДУЩЕЕ → БЕЗ ДАТЫ
+    var sorted = [].concat(todayGroup, overdueGroup, futureGroup, noDateGroup);
+    tasksToRender = tasksToRender.filter(function (t) {
+      return t.status !== status;
+    }).concat(sorted);
+  });
+  if (sortState['done']) {
+    var _doneTasks = tasksToRender.filter(function (t) {
+      return t.status === 'done';
+    });
+    _doneTasks.sort(function (a, b) {
+      var dateA = a.startDate ? new Date(a.startDate) : new Date(0);
+      var dateB = b.startDate ? new Date(b.startDate) : new Date(0);
+      return sortState['done'] === 'asc' ? dateA - dateB : dateB - dateA;
+    });
+    tasksToRender = tasksToRender.filter(function (t) {
+      return t.status !== 'done';
+    }).concat(_doneTasks);
+  }
+  var todoTasks = tasksToRender.filter(function (t) {
+    return t.status === 'todo';
+  });
+  var inProgressTasks = tasksToRender.filter(function (t) {
+    return t.status === 'in-progress';
+  });
+  var doneTasks = tasksToRender.filter(function (t) {
+    return t.status === 'done';
+  });
+  document.getElementById('countTodo').textContent = todoTasks.length;
+  document.getElementById('countInProgress').textContent = inProgressTasks.length;
+  document.getElementById('countDone').textContent = doneTasks.length;
+  todoTasks.forEach(function (task) {
+    return renderTask(task, 'todo-tasks');
+  });
+  inProgressTasks.forEach(function (task) {
+    return renderTask(task, 'in-progress-tasks');
+  });
+  doneTasks.forEach(function (task) {
+    return renderTask(task, 'done-tasks');
+  });
+
+  // Update sort buttons
+  document.querySelectorAll('.sort-btn').forEach(function (btn) {
+    var btnStatus = btn.dataset.status;
+    if (sortState[btnStatus]) {
+      btn.classList.add('active');
+      btn.textContent = sortState[btnStatus] === 'asc' ? '📅 ↑' : '📅 ↓';
+    }
+  });
+}
+function sortTasks(status) {
+  if (sortState[status] === null) {
+    sortState[status] = 'asc';
+  } else if (sortState[status] === 'asc') {
+    sortState[status] = 'desc';
+  } else {
+    sortState[status] = null;
+  }
+  renderBoard();
+}
+function renderTask(task) {
+  var appendToColumn = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+  // Определяем контейнер по статусу задачи
+  var container;
+  if (appendToColumn === true) {
+    container = document.getElementById(task.status + '-tasks');
+  } else {
+    container = document.getElementById(appendToColumn);
+  }
+  if (!container) return;
+  var card = document.createElement('div');
+  card.className = 'task-card ' + task.status;
+  card.draggable = true;
+  card.dataset.id = task.id;
+
+  // Приоритетная подсветка
+  if (task.plannedDate && task.status !== 'done') {
+    var today = getTodayStr();
+    var tomorrow = getDateOffsetStr(1);
+    if (task.plannedDate < today) {
+      card.classList.add('planned-overdue');
+    } else if (task.plannedDate === today) {
+      card.classList.add('planned-active');
+    } else if (task.plannedDate === tomorrow) {
+      card.classList.add('planned-tomorrow');
+    }
+  }
+  var assignee = users.find(function (u) {
+    return u.userId === task.assignedTo;
+  });
+  var assigneeName = assignee ? assignee.name : 'Не назначен';
+  var plannedDateHtml = '';
+  if (task.plannedDate) {
+    var _today = getTodayStr();
+    var _tomorrow = getDateOffsetStr(1);
+    if (task.status === 'done') {
+      plannedDateHtml = "<div class=\"task-planned\">\uD83D\uDCCC \u0411\u044B\u043B\u043E \u043D\u0430: ".concat(formatDateWithDay(task.plannedDate), "</div>");
+    } else if (task.plannedDate < _today) {
+      plannedDateHtml = "<div class=\"task-planned task-planned-overdue\">\uD83D\uDCCC \u041F\u0440\u043E\u0441\u0440\u043E\u0447\u0435\u043D\u043E: ".concat(formatDate(task.plannedDate), "</div>");
+    } else if (task.plannedDate === _today) {
+      plannedDateHtml = "<div class=\"task-planned task-planned-today\">\uD83C\uDFAF \u0421\u0415\u0413\u041E\u0414\u041D\u042F!</div>";
+    } else if (task.plannedDate === _tomorrow) {
+      plannedDateHtml = "<div class=\"task-planned\">\uD83D\uDCC5 \u0417\u0430\u0432\u0442\u0440\u0430!</div>";
+    } else {
+      plannedDateHtml = "<div class=\"task-planned\">\uD83D\uDCC5 ".concat(formatDateWithDay(task.plannedDate), "</div>");
+    }
+  }
+  card.innerHTML = "\n        <div class=\"task-title\">".concat(escapeHtml(task.title), "</div>\n        ").concat(plannedDateHtml, "\n        <div class=\"task-assignee\">\uD83D\uDC64 ").concat(escapeHtml(assigneeName), "</div>\n        ").concat(task.startDate ? "<div class=\"task-meta\">\uD83D\uDCC5 \u0421\u043E\u0437\u0434\u0430\u043D\u043E: ".concat(formatDate(task.startDate), "</div>") : '', "\n        ").concat(task.duration ? "<div class=\"task-meta\">\u23F1\uFE0F ".concat(task.duration, "</div>") : '', "\n        ").concat(task.attachments && task.attachments.length > 0 ? "\n          <div class=\"task-attachments\" style=\"margin-top:8px;\">\n            ".concat(task.attachments.filter(function (a) {
+    return a.type === 'image';
+  }).map(function (att) {
+    return "\n              <img src=\"".concat(att.url, "\" style=\"height:60px;border-radius:6px;margin-right:6px;cursor:pointer;\" onclick=\"window.open('").concat(att.url, "', '_blank')\" />\n            ");
+  }).join(''), "\n          </div>\n        ") : '', "\n        <div class=\"task-actions\">\n          ").concat(task.status !== 'todo' ? '<button data-action="back" data-id="' + task.id + '">← Назад</button>' : '', "\n          ").concat(task.status !== 'done' ? '<button data-action="forward" data-id="' + task.id + '">Вперёд →</button>' : '', "\n        </div>\n      ");
+  card.addEventListener('dragstart', handleDragStart);
+  card.addEventListener('dragend', handleDragEnd);
+  var buttons = card.querySelectorAll('.task-actions button');
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var taskId = this.getAttribute('data-id');
+      var action = this.dataset.action;
+      if (action && taskId) {
+        moveTask(taskId, action);
+      }
+    });
+  });
+  container.appendChild(card);
+}
+
+// ===== Task Movement =====
+function moveTask(_x8, _x9) {
+  return _moveTask.apply(this, arguments);
+} // ===== Drag and Drop =====
+function _moveTask() {
+  _moveTask = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee9(taskId, direction) {
+    var task, newStatus, oldCard, newCard, card, _t7;
+    return _regenerator().w(function (_context9) {
+      while (1) switch (_context9.p = _context9.n) {
+        case 0:
+          task = tasks.find(function (t) {
+            return t.id === taskId;
+          });
+          if (task) {
+            _context9.n = 1;
+            break;
           }
-        }
-        const url = `${API_URL}?${urlParams}`;
-
-        const script = document.createElement('script');
-        script.src = url;
-        script.onerror = () => {
-          setSyncStatus('error', '❌ Ошибка сети');
-          reject(new Error('JSONP request failed'));
-        };
-
-        window[callbackName] = (response) => {
-          if (response && response.ok) {
-            setSyncStatus('ready', '✅ Синхронизировано');
-            setTimeout(() => setSyncStatus('ready', ''), 3000);
-            resolve(response.data || response);
+          return _context9.a(2);
+        case 1:
+          if (direction === 'forward') {
+            newStatus = task.status === 'todo' ? 'in-progress' : 'done';
           } else {
-            setSyncStatus('error', '❌ Ошибка: ' + (response?.error || 'Неизвестная'));
-            reject(new Error(response?.error || 'API error'));
+            newStatus = task.status === 'done' ? 'in-progress' : 'todo';
           }
-          delete window[callbackName];
-          document.body.removeChild(script);
-        };
 
-        document.body.appendChild(script);
-      });
-    }
-
-    async function apiCall(action, payload = {}) {
-      setSyncStatus('syncing', '🔄 Синхронизация...');
-      try {
-        return await apiJsonp(action, payload);
-      } catch (e) {
-        setSyncStatus('error', '❌ Ошибка сети');
-        console.error('API call error:', e);
-        throw e;
-      }
-    }
-
-    async function getUsers() {
-      try {
-        const response = await fetch(API_URL + '?mode=tg-api&action=getUsers');
-        const result = await response.json();
-        return result.ok ? (result.data || []) : [];
-      } catch (e) {
-        console.error('getUsers error:', e);
-        return [];
-      }
-    }
-
-    async function getTasks(userId = null) {
-      try {
-        const params = {};
-        if (userId && userId !== 'admin') {
-          params.userId = userId;
-        }
-        const result = await apiJsonp('getTasks', params);
-        // apiJsonp уже возвращает response.data, но для совместимости проверяем
-        return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
-      } catch (e) {
-        console.error('getTasks error:', e);
-        return [];
-      }
-    }
-
-    async function addTask(title, plannedDate, assignedTo) {
-      try {
-        const result = await apiCall('addTask', {
-          title: title,
-          plannedDate: plannedDate || '',
-          assignedTo: assignedTo
-        });
-        return result;
-      } catch (e) {
-        console.error('addTask error:', e);
-        throw e;
-      }
-    }
-
-    async function updateTaskStatus(taskId, newStatus) {
-      try {
-        const result = await apiCall('updateStatus', {
-          id: taskId,
-          status: newStatus
-        });
-        return result;
-      } catch (e) {
-        console.error('updateTaskStatus error:', e);
-        throw e;
-      }
-    }
-
-    async function deleteTask(taskId) {
-      try {
-        const result = await apiCall('deleteTask', { id: taskId });
-        return result;
-      } catch (e) {
-        console.error('deleteTask error:', e);
-        throw e;
-      }
-    }
-
-    // ===== State =====
-    let tasks = [];
-    let currentUserId = null;
-    let users = [];
-    let sortState = { 'todo': null, 'in-progress': null, 'done': null };
-    let pendingTaskIds = new Set();
-    const AUTO_REFRESH_SECONDS = 30;
-    let autoRefreshInterval = null;
-
-    const statusLabels = {
-      'todo': '📝 Задания',
-      'in-progress': '🔄 В работе',
-      'done': '✅ Готово'
-    };
-
-    // ===== Load Data =====
-    async function loadUser() {
-      const urlParams = new URLSearchParams(window.location.search);
-      currentUserId = urlParams.get('userId') || localStorage.getItem(CURRENT_USER_KEY);
-
-      if (!currentUserId) {
-        window.location.href = 'select_user.html';
-        return;
-      }
-
-      setSyncStatus('syncing', '🔄 Загрузка пользователей...');
-      users = await getUsers();
-      const currentUser = users.find(u => u.userId === currentUserId);
-
-      if (currentUser) {
-        document.getElementById('userBadge').textContent = '👤 ' + currentUser.name + (currentUser.role === 'admin' ? ' (Админ)' : '');
-      }
-
-      await loadTasks();
-    }
-
-    async function loadTasks() {
-      setSyncStatus('syncing', '🔄 Загрузка задач...');
-      tasks = await getTasks(currentUserId === 'admin' ? 'admin' : currentUserId);
-      renderBoard();
-    }
-
-    function startAutoRefresh() {
-      if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-      }
-      autoRefreshInterval = setInterval(() => {
-        console.log('Auto-refreshing tasks...');
-        getTasks(currentUserId === 'admin' ? 'admin' : currentUserId)
-          .then(newTasks => {
-            if (JSON.stringify(newTasks) !== JSON.stringify(tasks)) {
-              console.log('Tasks changed, updating board...');
-              tasks = newTasks;
-              renderBoard();
-              setSyncStatus('ready', '✅ Обновлено');
-              setTimeout(() => setSyncStatus('ready', ''), 2000);
-            }
-          })
-          .catch(e => console.error('Auto-refresh error:', e));
-      }, AUTO_REFRESH_SECONDS * 1000);
-      console.log('Auto-refresh started (every ' + AUTO_REFRESH_SECONDS + 's)');
-    }
-
-    function stopAutoRefresh() {
-      if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-      }
-    }
-
-    // ===== Board Rendering =====
-    function renderBoard() {
-      const board = document.getElementById('board');
-      
-      board.innerHTML = `
-        <div class="column todo" data-status="todo">
-          <div class="column-header">
-            <span>${statusLabels['todo']}<span class="task-count" id="countTodo">0</span></span>
-            <button class="sort-btn" data-status="todo" onclick="sortTasks('todo')">📅↑↓</button>
-          </div>
-          <div class="task-list" id="todo-tasks"></div>
-        </div>
-        <div class="column in-progress" data-status="in-progress">
-          <div class="column-header">
-            <span>${statusLabels['in-progress']}<span class="task-count" id="countInProgress">0</span></span>
-            <button class="sort-btn" data-status="in-progress" onclick="sortTasks('in-progress')">📅↑↓</button>
-          </div>
-          <div class="task-list" id="in-progress-tasks"></div>
-        </div>
-        <div class="column done" data-status="done">
-          <div class="column-header">
-            <span>${statusLabels['done']}<span class="task-count" id="countDone">0</span></span>
-            <button class="sort-btn" data-status="done" onclick="sortTasks('done')">📅↑↓</button>
-          </div>
-          <div class="task-list" id="done-tasks"></div>
-        </div>
-      `;
-
-      // Sort and filter tasks с приоритетами дат
-      let tasksToRender = [...tasks];
-      ['todo', 'in-progress'].forEach(status => {
-        const statusTasks = tasksToRender.filter(t => t.status === status);
-        const today = getTodayStr();
-
-        const activeGroup = statusTasks.filter(t => t.plannedDate && t.plannedDate <= today);
-        const futureGroup = statusTasks.filter(t => t.plannedDate && t.plannedDate > today);
-        const noDateGroup = statusTasks.filter(t => !t.plannedDate);
-
-        // Split activeGroup into overdue and today (today first, then overdue by date)
-        const overdueGroup = activeGroup.filter(t => t.plannedDate < today);
-        const todayGroup = activeGroup.filter(t => t.plannedDate === today);
-
-        overdueGroup.sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
-        todayGroup.sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
-        futureGroup.sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
-
-        if (sortState[status]) {
-          const sortFn = (a, b) => {
-            const dateA = a.startDate ? new Date(a.startDate) : new Date(0);
-            const dateB = b.startDate ? new Date(b.startDate) : new Date(0);
-            return sortState[status] === 'asc' ? dateA - dateB : dateB - dateA;
-          };
-          todayGroup.sort(sortFn);
-          overdueGroup.sort(sortFn);
-          futureGroup.sort(sortFn);
-          noDateGroup.sort(sortFn);
-        }
-
-        // Приоритет: СЕГОДНЯ → ПРОСРОЧЕНО → БУДУЩЕЕ → БЕЗ ДАТЫ
-        const sorted = [...todayGroup, ...overdueGroup, ...futureGroup, ...noDateGroup];
-        tasksToRender = tasksToRender.filter(t => t.status !== status).concat(sorted);
-      });
-
-      if (sortState['done']) {
-        const doneTasks = tasksToRender.filter(t => t.status === 'done');
-        doneTasks.sort((a, b) => {
-          const dateA = a.startDate ? new Date(a.startDate) : new Date(0);
-          const dateB = b.startDate ? new Date(b.startDate) : new Date(0);
-          return sortState['done'] === 'asc' ? dateA - dateB : dateB - dateA;
-        });
-        tasksToRender = tasksToRender.filter(t => t.status !== 'done').concat(doneTasks);
-      }
-
-      const todoTasks = tasksToRender.filter(t => t.status === 'todo');
-      const inProgressTasks = tasksToRender.filter(t => t.status === 'in-progress');
-      const doneTasks = tasksToRender.filter(t => t.status === 'done');
-
-      document.getElementById('countTodo').textContent = todoTasks.length;
-      document.getElementById('countInProgress').textContent = inProgressTasks.length;
-      document.getElementById('countDone').textContent = doneTasks.length;
-
-      todoTasks.forEach(task => renderTask(task, 'todo-tasks'));
-      inProgressTasks.forEach(task => renderTask(task, 'in-progress-tasks'));
-      doneTasks.forEach(task => renderTask(task, 'done-tasks'));
-
-      // Update sort buttons
-      document.querySelectorAll('.sort-btn').forEach(btn => {
-        const btnStatus = btn.dataset.status;
-        if (sortState[btnStatus]) {
-          btn.classList.add('active');
-          btn.textContent = sortState[btnStatus] === 'asc' ? '📅 ↑' : '📅 ↓';
-        }
-      });
-    }
-
-    function sortTasks(status) {
-      if (sortState[status] === null) {
-        sortState[status] = 'asc';
-      } else if (sortState[status] === 'asc') {
-        sortState[status] = 'desc';
-      } else {
-        sortState[status] = null;
-      }
-      renderBoard();
-    }
-
-    function renderTask(task, appendToColumn = false) {
-      // Определяем контейнер по статусу задачи
-      let container;
-      if (appendToColumn === true) {
-        container = document.getElementById(task.status + '-tasks');
-      } else {
-        container = document.getElementById(appendToColumn);
-      }
-      if (!container) return;
-
-      const card = document.createElement('div');
-      card.className = 'task-card ' + task.status;
-      card.draggable = true;
-      card.dataset.id = task.id;
-
-      // Приоритетная подсветка
-      if (task.plannedDate && task.status !== 'done') {
-        const today = getTodayStr();
-        const tomorrow = getDateOffsetStr(1);
-
-        if (task.plannedDate < today) {
-          card.classList.add('planned-overdue');
-        } else if (task.plannedDate === today) {
-          card.classList.add('planned-active');
-        } else if (task.plannedDate === tomorrow) {
-          card.classList.add('planned-tomorrow');
-        }
-      }
-
-      const assignee = users.find(u => u.userId === task.assignedTo);
-      const assigneeName = assignee ? assignee.name : 'Не назначен';
-
-      let plannedDateHtml = '';
-      if (task.plannedDate) {
-        const today = getTodayStr();
-        const tomorrow = getDateOffsetStr(1);
-
-        if (task.status === 'done') {
-          plannedDateHtml = `<div class="task-planned">📌 Было на: ${formatDateWithDay(task.plannedDate)}</div>`;
-        } else if (task.plannedDate < today) {
-          plannedDateHtml = `<div class="task-planned task-planned-overdue">📌 Просрочено: ${formatDate(task.plannedDate)}</div>`;
-        } else if (task.plannedDate === today) {
-          plannedDateHtml = `<div class="task-planned task-planned-today">🎯 СЕГОДНЯ!</div>`;
-        } else if (task.plannedDate === tomorrow) {
-          plannedDateHtml = `<div class="task-planned">📅 Завтра!</div>`;
-        } else {
-          plannedDateHtml = `<div class="task-planned">📅 ${formatDateWithDay(task.plannedDate)}</div>`;
-        }
-      }
-
-      card.innerHTML = `
-        <div class="task-title">${escapeHtml(task.title)}</div>
-        ${plannedDateHtml}
-        <div class="task-assignee">👤 ${escapeHtml(assigneeName)}</div>
-        ${task.startDate ? `<div class="task-meta">📅 Создано: ${formatDate(task.startDate)}</div>` : ''}
-        ${task.duration ? `<div class="task-meta">⏱️ ${task.duration}</div>` : ''}
-        ${task.attachments && task.attachments.length > 0 ? `
-          <div class="task-attachments" style="margin-top:8px;">
-            ${task.attachments.filter(a => a.type === 'image').map(att => `
-              <img src="${att.url}" style="height:60px;border-radius:6px;margin-right:6px;cursor:pointer;" onclick="window.open('${att.url}', '_blank')" />
-            `).join('')}
-          </div>
-        ` : ''}
-        <div class="task-actions">
-          ${task.status !== 'todo' ? '<button data-action="back" data-id="' + task.id + '">← Назад</button>' : ''}
-          ${task.status !== 'done' ? '<button data-action="forward" data-id="' + task.id + '">Вперёд →</button>' : ''}
-        </div>
-      `;
-
-      card.addEventListener('dragstart', handleDragStart);
-      card.addEventListener('dragend', handleDragEnd);
-
-      const buttons = card.querySelectorAll('.task-actions button');
-      buttons.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.stopPropagation();
-          const taskId = this.getAttribute('data-id');
-          const action = this.dataset.action;
-          if (action && taskId) {
-            moveTask(taskId, action);
-          }
-        });
-      });
-
-      container.appendChild(card);
-    }
-
-    // ===== Task Movement =====
-    async function moveTask(taskId, direction) {
-      const task = tasks.find(t => t.id === taskId);
-      if (!task) return;
-
-      let newStatus;
-      if (direction === 'forward') {
-        newStatus = task.status === 'todo' ? 'in-progress' : 'done';
-      } else {
-        newStatus = task.status === 'done' ? 'in-progress' : 'todo';
-      }
-
-      // Оптимистичное обновление — сразу обновляем UI
-      task.status = newStatus;
-      pendingTaskIds.add(taskId);
-
-      // Удаляем старую карточку
-      const oldCard = document.querySelector(`.task-card[data-id="${taskId}"]`);
-      if (oldCard) oldCard.remove();
-
-      // Рендерим новую карточку с анимацией
-      renderTask(task, true);
-
-      // Добавляем класс синхронизации
-      const newCard = document.querySelector(`.task-card[data-id="${taskId}"]`);
-      if (newCard) {
-        newCard.classList.add('syncing');
-        newCard.classList.add('just-arrived');
-        newCard.querySelectorAll('button').forEach(b => b.disabled = true);
-      }
-
-      try {
-        // Отправляем на сервер
-        await apiJsonp('updateStatus', { id: taskId, status: newStatus });
-
-        // Убираем классы
-        pendingTaskIds.delete(taskId);
-        const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
-        if (card) {
-          card.classList.remove('syncing');
-          card.classList.remove('just-arrived');
-          card.querySelectorAll('button').forEach(b => b.disabled = false);
-        }
-      } catch (err) {
-        pendingTaskIds.delete(taskId);
-        alert('Ошибка при перемещении: ' + err.message);
-        await loadTasks();
-      }
-    }
-
-    // ===== Drag and Drop =====
-    let draggedTaskId = null;
-
-    function handleDragStart(e) {
-      draggedTaskId = e.target.dataset.id;
-      e.target.classList.add('dragging');
-    }
-
-    function handleDragEnd(e) {
-      e.target.classList.remove('dragging');
-    }
-
-    function handleDragOver(e) {
-      e.preventDefault();
-    }
-
-    async function handleDrop(e) {
-      e.preventDefault();
-      const newStatus = e.currentTarget.dataset.status;
-      if (draggedTaskId && newStatus) {
-        const task = tasks.find(t => t.id === draggedTaskId);
-        if (task && task.status !== newStatus) {
-          // Оптимистичное обновление
+          // Оптимистичное обновление — сразу обновляем UI
           task.status = newStatus;
-          pendingTaskIds.add(draggedTaskId);
+          pendingTaskIds.add(taskId);
 
-          const oldCard = document.querySelector(`.task-card[data-id="${draggedTaskId}"]`);
+          // Удаляем старую карточку
+          oldCard = document.querySelector(".task-card[data-id=\"".concat(taskId, "\"]"));
           if (oldCard) oldCard.remove();
 
+          // Рендерим новую карточку с анимацией
           renderTask(task, true);
 
-          const newCard = document.querySelector(`.task-card[data-id="${draggedTaskId}"]`);
+          // Добавляем класс синхронизации
+          newCard = document.querySelector(".task-card[data-id=\"".concat(taskId, "\"]"));
           if (newCard) {
             newCard.classList.add('syncing');
             newCard.classList.add('just-arrived');
-            newCard.querySelectorAll('button').forEach(b => b.disabled = true);
+            newCard.querySelectorAll('button').forEach(function (b) {
+              return b.disabled = true;
+            });
           }
-
-          try {
-            await apiJsonp('updateStatus', { id: draggedTaskId, status: newStatus });
-
-            pendingTaskIds.delete(draggedTaskId);
-            const card = document.querySelector(`.task-card[data-id="${draggedTaskId}"]`);
-            if (card) {
-              card.classList.remove('syncing');
-              card.classList.remove('just-arrived');
-              card.querySelectorAll('button').forEach(b => b.disabled = false);
-            }
-          } catch (err) {
-            pendingTaskIds.delete(draggedTaskId);
-            alert('Ошибка при перемещении: ' + err.message);
-            await loadTasks();
+          _context9.p = 2;
+          _context9.n = 3;
+          return apiJsonp('updateStatus', {
+            id: taskId,
+            status: newStatus
+          });
+        case 3:
+          // Убираем классы
+          pendingTaskIds["delete"](taskId);
+          card = document.querySelector(".task-card[data-id=\"".concat(taskId, "\"]"));
+          if (card) {
+            card.classList.remove('syncing');
+            card.classList.remove('just-arrived');
+            card.querySelectorAll('button').forEach(function (b) {
+              return b.disabled = false;
+            });
           }
-        }
+          _context9.n = 5;
+          break;
+        case 4:
+          _context9.p = 4;
+          _t7 = _context9.v;
+          pendingTaskIds["delete"](taskId);
+          alert('Ошибка при перемещении: ' + _t7.message);
+          _context9.n = 5;
+          return loadTasks();
+        case 5:
+          return _context9.a(2);
       }
-      draggedTaskId = null;
-    }
+    }, _callee9, null, [[2, 4]]);
+  }));
+  return _moveTask.apply(this, arguments);
+}
+var draggedTaskId = null;
+function handleDragStart(e) {
+  draggedTaskId = e.target.dataset.id;
+  e.target.classList.add('dragging');
+}
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging');
+}
+function handleDragOver(e) {
+  e.preventDefault();
+}
+function handleDrop(_x0) {
+  return _handleDrop.apply(this, arguments);
+} // Add drop handlers
+function _handleDrop() {
+  _handleDrop = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee0(e) {
+    var newStatus, task, oldCard, newCard, card, _t8;
+    return _regenerator().w(function (_context0) {
+      while (1) switch (_context0.p = _context0.n) {
+        case 0:
+          e.preventDefault();
+          newStatus = e.currentTarget.dataset.status;
+          if (!(draggedTaskId && newStatus)) {
+            _context0.n = 4;
+            break;
+          }
+          task = tasks.find(function (t) {
+            return t.id === draggedTaskId;
+          });
+          if (!(task && task.status !== newStatus)) {
+            _context0.n = 4;
+            break;
+          }
+          // Оптимистичное обновление
+          task.status = newStatus;
+          pendingTaskIds.add(draggedTaskId);
+          oldCard = document.querySelector(".task-card[data-id=\"".concat(draggedTaskId, "\"]"));
+          if (oldCard) oldCard.remove();
+          renderTask(task, true);
+          newCard = document.querySelector(".task-card[data-id=\"".concat(draggedTaskId, "\"]"));
+          if (newCard) {
+            newCard.classList.add('syncing');
+            newCard.classList.add('just-arrived');
+            newCard.querySelectorAll('button').forEach(function (b) {
+              return b.disabled = true;
+            });
+          }
+          _context0.p = 1;
+          _context0.n = 2;
+          return apiJsonp('updateStatus', {
+            id: draggedTaskId,
+            status: newStatus
+          });
+        case 2:
+          pendingTaskIds["delete"](draggedTaskId);
+          card = document.querySelector(".task-card[data-id=\"".concat(draggedTaskId, "\"]"));
+          if (card) {
+            card.classList.remove('syncing');
+            card.classList.remove('just-arrived');
+            card.querySelectorAll('button').forEach(function (b) {
+              return b.disabled = false;
+            });
+          }
+          _context0.n = 4;
+          break;
+        case 3:
+          _context0.p = 3;
+          _t8 = _context0.v;
+          pendingTaskIds["delete"](draggedTaskId);
+          alert('Ошибка при перемещении: ' + _t8.message);
+          _context0.n = 4;
+          return loadTasks();
+        case 4:
+          draggedTaskId = null;
+        case 5:
+          return _context0.a(2);
+      }
+    }, _callee0, null, [[1, 3]]);
+  }));
+  return _handleDrop.apply(this, arguments);
+}
+document.querySelectorAll('.column').forEach(function (column) {
+  column.addEventListener('dragover', handleDragOver);
+  column.addEventListener('drop', handleDrop);
+});
 
-    // Add drop handlers
-    document.querySelectorAll('.column').forEach(column => {
-      column.addEventListener('dragover', handleDragOver);
-      column.addEventListener('drop', handleDrop);
+// ===== Date Picker Functions =====
+function selectPlannedDate(days) {
+  var display = document.getElementById('dateSelectedDisplay');
+  var btns = document.querySelectorAll('.date-quick-btn');
+  if (selectedPlannedDays === days) {
+    selectedPlannedDays = null;
+    display.textContent = '';
+    btns.forEach(function (b) {
+      return b.classList.remove('active');
     });
-
-    // ===== Date Picker Functions =====
-    function selectPlannedDate(days) {
-      const display = document.getElementById('dateSelectedDisplay');
-      const btns = document.querySelectorAll('.date-quick-btn');
-
-      if (selectedPlannedDays === days) {
-        selectedPlannedDays = null;
-        display.textContent = '';
-        btns.forEach(b => b.classList.remove('active'));
-        return;
-      }
-
-      selectedPlannedDays = days;
-      const dateStr = getDateOffsetStr(days);
-      
-      btns.forEach(b => {
-        b.classList.remove('active');
-        if (parseInt(b.dataset.days) === days) b.classList.add('active');
-      });
-
-      display.textContent = '✅ ' + formatDateWithDay(dateStr);
-    }
-
-    function adjustPlannedDate(delta) {
-      const display = document.getElementById('dateSelectedDisplay');
-      const btns = document.querySelectorAll('.date-quick-btn');
-      
-      const current = document.getElementById('datePickerModal').dataset.current || getTodayStr();
-      const newDate = getDateOffsetStrFrom(current, delta);
-      document.getElementById('datePickerModal').dataset.current = newDate;
-      
-      selectedPlannedDays = 'custom';
-      btns.forEach(b => b.classList.remove('active'));
-      
-      display.textContent = '✅ ' + formatDateWithDay(newDate);
-    }
-
-    function toggleDatePicker() {
-      const modal = document.getElementById('datePickerModal');
-      if (modal.classList.contains('active')) {
-        closeDatePicker();
-      } else {
-        openDatePicker();
-      }
-    }
-
-    function openDatePicker() {
-      const currentValue = document.getElementById('datePickerModal').dataset.current || getTodayStr();
-      const [y, m, d] = currentValue.split('-').map(Number);
-      pickerYear = y;
-      pickerMonth = m - 1;
-      renderDatePicker();
-      document.getElementById('datePickerModal').classList.add('active');
-    }
-
-    function closeDatePicker() {
-      document.getElementById('datePickerModal').classList.remove('active');
-    }
-
-    function renderDatePicker() {
-      const months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-      document.getElementById('currentMonthYear').textContent = months[pickerMonth] + ' ' + pickerYear;
-
-      const today = new Date();
-      const todayStr = getTodayStr();
-      const firstDay = new Date(pickerYear, pickerMonth, 1);
-      const lastDay = new Date(pickerYear, pickerMonth + 1, 0);
-      const startingDay = (firstDay.getDay() + 6) % 7;
-
-      let html = '';
-      const selectedValue = document.getElementById('datePickerModal').dataset.current || getTodayStr();
-
-      const prevMonthLastDay = new Date(pickerYear, pickerMonth, 0).getDate();
-      for (let i = startingDay - 1; i >= 0; i--) {
-        const day = prevMonthLastDay - i;
-        html += '<span class="date-picker-day other-month" data-day="' + day + '" data-month="' + (pickerMonth - 1) + '" data-year="' + pickerYear + '">' + day + '</span>';
-      }
-
-      for (let day = 1; day <= lastDay.getDate(); day++) {
-        const dateStr = pickerYear + '-' + String(pickerMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-        let classes = 'date-picker-day';
-        if (dateStr === todayStr) classes += ' today';
-        if (dateStr === selectedValue) classes += ' selected';
-        if (dateStr < todayStr) classes += ' disabled';
-        html += '<span class="' + classes + '" data-day="' + day + '" data-month="' + pickerMonth + '" data-year="' + pickerYear + '">' + day + '</span>';
-      }
-
-      const remainingDays = 42 - (startingDay + lastDay.getDate());
-      for (let day = 1; day <= remainingDays; day++) {
-        html += '<span class="date-picker-day other-month" data-day="' + day + '" data-month="' + (pickerMonth + 1) + '" data-year="' + pickerYear + '">' + day + '</span>';
-      }
-
-      document.getElementById('datePickerDays').innerHTML = html;
-
-      document.querySelectorAll('.date-picker-day:not(.disabled)').forEach(el => {
-        el.addEventListener('click', () => {
-          const day = el.dataset.day;
-          const month = parseInt(el.dataset.month) + 1;
-          const year = el.dataset.year;
-          const dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
-          document.getElementById('datePickerModal').dataset.current = dateStr;
-          document.getElementById('dateSelectedDisplay').textContent = '✅ ' + formatDateWithDay(dateStr);
-          closeDatePicker();
-        });
-      });
-    }
-
-    document.getElementById('prevMonth').addEventListener('click', () => {
-      pickerMonth--;
-      if (pickerMonth < 0) { pickerMonth = 11; pickerYear--; }
-      renderDatePicker();
-    });
-
-    document.getElementById('nextMonth').addEventListener('click', () => {
-      pickerMonth++;
-      if (pickerMonth > 11) { pickerMonth = 0; pickerYear++; }
-      renderDatePicker();
-    });
-
-    document.getElementById('datePickerOverlay').addEventListener('click', closeDatePicker);
-    document.getElementById('closeDatePicker').addEventListener('click', closeDatePicker);
-    document.getElementById('clearDate').addEventListener('click', () => {
-      document.getElementById('datePickerModal').dataset.current = '';
-      document.getElementById('dateSelectedDisplay').textContent = '';
-      selectedPlannedDays = null;
-      document.querySelectorAll('.date-quick-btn').forEach(b => b.classList.remove('active'));
+    return;
+  }
+  selectedPlannedDays = days;
+  var dateStr = getDateOffsetStr(days);
+  btns.forEach(function (b) {
+    b.classList.remove('active');
+    if (parseInt(b.dataset.days) === days) b.classList.add('active');
+  });
+  display.textContent = '✅ ' + formatDateWithDay(dateStr);
+}
+function adjustPlannedDate(delta) {
+  var display = document.getElementById('dateSelectedDisplay');
+  var btns = document.querySelectorAll('.date-quick-btn');
+  var current = document.getElementById('datePickerModal').dataset.current || getTodayStr();
+  var newDate = getDateOffsetStrFrom(current, delta);
+  document.getElementById('datePickerModal').dataset.current = newDate;
+  selectedPlannedDays = 'custom';
+  btns.forEach(function (b) {
+    return b.classList.remove('active');
+  });
+  display.textContent = '✅ ' + formatDateWithDay(newDate);
+}
+function toggleDatePicker() {
+  var modal = document.getElementById('datePickerModal');
+  if (modal.classList.contains('active')) {
+    closeDatePicker();
+  } else {
+    openDatePicker();
+  }
+}
+function openDatePicker() {
+  var currentValue = document.getElementById('datePickerModal').dataset.current || getTodayStr();
+  var _currentValue$split$m = currentValue.split('-').map(Number),
+    _currentValue$split$m2 = _slicedToArray(_currentValue$split$m, 3),
+    y = _currentValue$split$m2[0],
+    m = _currentValue$split$m2[1],
+    d = _currentValue$split$m2[2];
+  pickerYear = y;
+  pickerMonth = m - 1;
+  renderDatePicker();
+  document.getElementById('datePickerModal').classList.add('active');
+}
+function closeDatePicker() {
+  document.getElementById('datePickerModal').classList.remove('active');
+}
+function renderDatePicker() {
+  var months = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+  document.getElementById('currentMonthYear').textContent = months[pickerMonth] + ' ' + pickerYear;
+  var today = new Date();
+  var todayStr = getTodayStr();
+  var firstDay = new Date(pickerYear, pickerMonth, 1);
+  var lastDay = new Date(pickerYear, pickerMonth + 1, 0);
+  var startingDay = (firstDay.getDay() + 6) % 7;
+  var html = '';
+  var selectedValue = document.getElementById('datePickerModal').dataset.current || getTodayStr();
+  var prevMonthLastDay = new Date(pickerYear, pickerMonth, 0).getDate();
+  for (var i = startingDay - 1; i >= 0; i--) {
+    var day = prevMonthLastDay - i;
+    html += '<span class="date-picker-day other-month" data-day="' + day + '" data-month="' + (pickerMonth - 1) + '" data-year="' + pickerYear + '">' + day + '</span>';
+  }
+  for (var _day2 = 1; _day2 <= lastDay.getDate(); _day2++) {
+    var dateStr = pickerYear + '-' + String(pickerMonth + 1).padStart(2, '0') + '-' + String(_day2).padStart(2, '0');
+    var classes = 'date-picker-day';
+    if (dateStr === todayStr) classes += ' today';
+    if (dateStr === selectedValue) classes += ' selected';
+    if (dateStr < todayStr) classes += ' disabled';
+    html += '<span class="' + classes + '" data-day="' + _day2 + '" data-month="' + pickerMonth + '" data-year="' + pickerYear + '">' + _day2 + '</span>';
+  }
+  var remainingDays = 42 - (startingDay + lastDay.getDate());
+  for (var _day4 = 1; _day4 <= remainingDays; _day4++) {
+    html += '<span class="date-picker-day other-month" data-day="' + _day4 + '" data-month="' + (pickerMonth + 1) + '" data-year="' + pickerYear + '">' + _day4 + '</span>';
+  }
+  document.getElementById('datePickerDays').innerHTML = html;
+  document.querySelectorAll('.date-picker-day:not(.disabled)').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var day = el.dataset.day;
+      var month = parseInt(el.dataset.month) + 1;
+      var year = el.dataset.year;
+      var dateStr = year + '-' + String(month).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+      document.getElementById('datePickerModal').dataset.current = dateStr;
+      document.getElementById('dateSelectedDisplay').textContent = '✅ ' + formatDateWithDay(dateStr);
       closeDatePicker();
     });
+  });
+}
+document.getElementById('prevMonth').addEventListener('click', function () {
+  pickerMonth--;
+  if (pickerMonth < 0) {
+    pickerMonth = 11;
+    pickerYear--;
+  }
+  renderDatePicker();
+});
+document.getElementById('nextMonth').addEventListener('click', function () {
+  pickerMonth++;
+  if (pickerMonth > 11) {
+    pickerMonth = 0;
+    pickerYear++;
+  }
+  renderDatePicker();
+});
+document.getElementById('datePickerOverlay').addEventListener('click', closeDatePicker);
+document.getElementById('closeDatePicker').addEventListener('click', closeDatePicker);
+document.getElementById('clearDate').addEventListener('click', function () {
+  document.getElementById('datePickerModal').dataset.current = '';
+  document.getElementById('dateSelectedDisplay').textContent = '';
+  selectedPlannedDays = null;
+  document.querySelectorAll('.date-quick-btn').forEach(function (b) {
+    return b.classList.remove('active');
+  });
+  closeDatePicker();
+});
 
-    // ===== Modal Functions =====
-    async function openAddTaskModal() {
-      const modal = document.getElementById('addTaskModal');
-      const textarea = document.getElementById('modalTaskInput');
+// ===== Modal Functions =====
+function openAddTaskModal() {
+  return _openAddTaskModal.apply(this, arguments);
+}
+function _openAddTaskModal() {
+  _openAddTaskModal = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee1() {
+    var modal, textarea, select;
+    return _regenerator().w(function (_context1) {
+      while (1) switch (_context1.n) {
+        case 0:
+          modal = document.getElementById('addTaskModal');
+          textarea = document.getElementById('modalTaskInput'); // Load users into dropdown
+          select = document.getElementById('taskAssignee');
+          select.innerHTML = '<option value="">Выберите исполнителя...</option>';
+          users.forEach(function (user) {
+            var option = document.createElement('option');
+            option.value = user.userId;
+            option.textContent = user.name + (user.role === 'admin' ? ' 👑' : '');
+            select.appendChild(option);
+          });
 
-      // Load users into dropdown
-      const select = document.getElementById('taskAssignee');
-      select.innerHTML = '<option value="">Выберите исполнителя...</option>';
+          // Pre-select current user
+          if (currentUserId) {
+            select.value = currentUserId;
+          }
 
-      users.forEach(user => {
-        const option = document.createElement('option');
-        option.value = user.userId;
-        option.textContent = user.name + (user.role === 'admin' ? ' 👑' : '');
-        select.appendChild(option);
-      });
-
-      // Pre-select current user
-      if (currentUserId) {
-        select.value = currentUserId;
+          // Устанавливаем currentTaskIdForUpload для нового task
+          currentTaskIdForUpload = null;
+          document.getElementById('taskAttachments').innerHTML = '';
+          document.getElementById('imageUploadStatus').textContent = '';
+          textarea.value = '';
+          textarea.style.height = 'auto';
+          textarea.style.height = textarea.scrollHeight + 'px';
+          modal.classList.add('show');
+          setTimeout(function () {
+            return textarea.focus();
+          }, 100);
+        case 1:
+          return _context1.a(2);
       }
-
-      // Устанавливаем currentTaskIdForUpload для нового task
-      currentTaskIdForUpload = null;
-      document.getElementById('taskAttachments').innerHTML = '';
-      document.getElementById('imageUploadStatus').textContent = '';
-
-      textarea.value = '';
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
-
-      modal.classList.add('show');
-      setTimeout(() => textarea.focus(), 100);
-    }
-
-    function closeAddTaskModal() {
-      const modal = document.getElementById('addTaskModal');
-      const textarea = document.getElementById('modalTaskInput');
-      modal.classList.remove('show');
-      textarea.value = '';
-      document.getElementById('dateSelectedDisplay').textContent = '';
-      selectedPlannedDays = null;
-      document.querySelectorAll('.date-quick-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('datePickerModal').dataset.current = '';
-    }
-
-    async function submitTaskFromModal() {
-      const textarea = document.getElementById('modalTaskInput');
-      const title = textarea.value.trim();
-      const assignedTo = document.getElementById('taskAssignee').value;
-
-      // Получаем дату из календаря
-      const plannedDate = document.getElementById('datePickerModal').dataset.current || '';
-
-      if (!title) {
-        alert('Введите описание задачи');
-        return;
+    }, _callee1);
+  }));
+  return _openAddTaskModal.apply(this, arguments);
+}
+function closeAddTaskModal() {
+  var modal = document.getElementById('addTaskModal');
+  var textarea = document.getElementById('modalTaskInput');
+  modal.classList.remove('show');
+  textarea.value = '';
+  document.getElementById('dateSelectedDisplay').textContent = '';
+  selectedPlannedDays = null;
+  document.querySelectorAll('.date-quick-btn').forEach(function (b) {
+    return b.classList.remove('active');
+  });
+  document.getElementById('datePickerModal').dataset.current = '';
+}
+function submitTaskFromModal() {
+  return _submitTaskFromModal.apply(this, arguments);
+} // ===== Image Upload Functions =====
+function _submitTaskFromModal() {
+  _submitTaskFromModal = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee10() {
+    var textarea, title, assignedTo, plannedDate, submitBtn, originalBtnText, _t9;
+    return _regenerator().w(function (_context10) {
+      while (1) switch (_context10.p = _context10.n) {
+        case 0:
+          textarea = document.getElementById('modalTaskInput');
+          title = textarea.value.trim();
+          assignedTo = document.getElementById('taskAssignee').value; // Получаем дату из календаря
+          plannedDate = document.getElementById('datePickerModal').dataset.current || '';
+          if (title) {
+            _context10.n = 1;
+            break;
+          }
+          alert('Введите описание задачи');
+          return _context10.a(2);
+        case 1:
+          if (assignedTo) {
+            _context10.n = 2;
+            break;
+          }
+          alert('Выберите исполнителя');
+          return _context10.a(2);
+        case 2:
+          submitBtn = document.querySelector('#addTaskModal .modal-btn-add');
+          originalBtnText = submitBtn.textContent;
+          submitBtn.textContent = '⏳ Сохранение...';
+          submitBtn.disabled = true;
+          submitBtn.style.opacity = '0.7';
+          _context10.p = 3;
+          _context10.n = 4;
+          return addTask(title, plannedDate, assignedTo);
+        case 4:
+          closeAddTaskModal();
+          _context10.n = 5;
+          return loadTasks();
+        case 5:
+          _context10.n = 7;
+          break;
+        case 6:
+          _context10.p = 6;
+          _t9 = _context10.v;
+          alert('Ошибка при добавлении задачи: ' + _t9.message);
+        case 7:
+          _context10.p = 7;
+          submitBtn.textContent = originalBtnText;
+          submitBtn.disabled = false;
+          submitBtn.style.opacity = '1';
+          return _context10.f(7);
+        case 8:
+          return _context10.a(2);
       }
-
-      if (!assignedTo) {
-        alert('Выберите исполнителя');
-        return;
-      }
-
-      const submitBtn = document.querySelector('#addTaskModal .modal-btn-add');
-      const originalBtnText = submitBtn.textContent;
-      submitBtn.textContent = '⏳ Сохранение...';
-      submitBtn.disabled = true;
-      submitBtn.style.opacity = '0.7';
-
-      try {
-        await addTask(title, plannedDate, assignedTo);
-        closeAddTaskModal();
-        await loadTasks();
-      } catch (e) {
-        alert('Ошибка при добавлении задачи: ' + e.message);
-      } finally {
-        submitBtn.textContent = originalBtnText;
-        submitBtn.disabled = false;
-        submitBtn.style.opacity = '1';
-      }
-    }
-
-    // ===== Image Upload Functions =====
-    let currentTaskIdForUpload = null;
-
-    async function handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      // Проверяем размер (макс 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert('Файл слишком большой. Максимум 5MB');
-        return;
-      }
-
-      const statusEl = document.getElementById('imageUploadStatus');
-      statusEl.textContent = '⏳ Загрузка...';
-
-      try {
-        // Читаем файл как Base64
-        const base64 = await readFileAsBase64(file);
-
-        // Загружаем в Google Drive
-        const uploadResult = await apiCall('uploadImageToDrive', {
-          base64Data: base64,
-          fileName: file.name || 'image.jpg',
-          taskId: currentTaskIdForUpload || 'temp'
-        });
-
-        if (uploadResult.ok && uploadResult.data) {
-          // Добавляем ссылку в задачу
-          const addResult = await apiCall('addImageToTask', {
+    }, _callee10, null, [[3, 6, 7, 8]]);
+  }));
+  return _submitTaskFromModal.apply(this, arguments);
+}
+var currentTaskIdForUpload = null;
+function handleImageUpload(_x1) {
+  return _handleImageUpload.apply(this, arguments);
+}
+function _handleImageUpload() {
+  _handleImageUpload = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee11(event) {
+    var file, statusEl, base64, uploadResult, addResult, _t0;
+    return _regenerator().w(function (_context11) {
+      while (1) switch (_context11.p = _context11.n) {
+        case 0:
+          file = event.target.files[0];
+          if (file) {
+            _context11.n = 1;
+            break;
+          }
+          return _context11.a(2);
+        case 1:
+          if (!(file.size > 5 * 1024 * 1024)) {
+            _context11.n = 2;
+            break;
+          }
+          alert('Файл слишком большой. Максимум 5MB');
+          return _context11.a(2);
+        case 2:
+          statusEl = document.getElementById('imageUploadStatus');
+          statusEl.textContent = '⏳ Загрузка...';
+          _context11.p = 3;
+          _context11.n = 4;
+          return readFileAsBase64(file);
+        case 4:
+          base64 = _context11.v;
+          _context11.n = 5;
+          return apiCall('uploadImageToDrive', {
+            base64Data: base64,
+            fileName: file.name || 'image.jpg',
+            taskId: currentTaskIdForUpload || 'temp'
+          });
+        case 5:
+          uploadResult = _context11.v;
+          if (!(uploadResult.ok && uploadResult.data)) {
+            _context11.n = 7;
+            break;
+          }
+          _context11.n = 6;
+          return apiCall('addImageToTask', {
             taskId: currentTaskIdForUpload,
             imageUrl: uploadResult.data.directUrl,
             imageName: file.name
           });
-
+        case 6:
+          addResult = _context11.v;
           if (addResult.ok) {
             statusEl.textContent = '✅ Фото загружено!';
             renderAttachments(addResult.data);
-            setTimeout(() => {
+            setTimeout(function () {
               statusEl.textContent = '';
             }, 3000);
           }
-        } else {
+          _context11.n = 8;
+          break;
+        case 7:
           statusEl.textContent = '❌ Ошибка: ' + (uploadResult.error || 'Неизвестная');
-        }
-      } catch (e) {
-        console.error('Image upload error:', e);
-        statusEl.textContent = '❌ Ошибка загрузки';
+        case 8:
+          _context11.n = 10;
+          break;
+        case 9:
+          _context11.p = 9;
+          _t0 = _context11.v;
+          console.error('Image upload error:', _t0);
+          statusEl.textContent = '❌ Ошибка загрузки';
+        case 10:
+          // Очищаем input
+          event.target.value = '';
+        case 11:
+          return _context11.a(2);
       }
-
-      // Очищаем input
-      event.target.value = '';
+    }, _callee11, null, [[3, 9]]);
+  }));
+  return _handleImageUpload.apply(this, arguments);
+}
+function readFileAsBase64(file) {
+  return new Promise(function (resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      return resolve(reader.result);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+function renderAttachments(attachments) {
+  var container = document.getElementById('taskAttachments');
+  if (!container) return;
+  if (!attachments || attachments.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = attachments.map(function (att, index) {
+    if (att.type === 'image') {
+      return "\n            <div style=\"position:relative;display:inline-block;margin:4px;\">\n              <img src=\"".concat(att.url, "\" style=\"height:80px;border-radius:8px;cursor:pointer;\" onclick=\"window.open('").concat(att.url, "', '_blank')\" />\n              <button onclick=\"removeAttachment(").concat(index, ")\" style=\"position:absolute;top:-8px;right:-8px;background:#dc3545;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;\">\xD7</button>\n            </div>\n          ");
     }
-
-    function readFileAsBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    function renderAttachments(attachments) {
-      const container = document.getElementById('taskAttachments');
-      if (!container) return;
-
-      if (!attachments || attachments.length === 0) {
-        container.innerHTML = '';
-        return;
+    return '';
+  }).join('');
+}
+function removeAttachment(_x10) {
+  return _removeAttachment.apply(this, arguments);
+} // ===== Event Listeners =====
+function _removeAttachment() {
+  _removeAttachment = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee12(index) {
+    var result, _t1;
+    return _regenerator().w(function (_context12) {
+      while (1) switch (_context12.p = _context12.n) {
+        case 0:
+          if (currentTaskIdForUpload) {
+            _context12.n = 1;
+            break;
+          }
+          return _context12.a(2);
+        case 1:
+          if (confirm('Удалить это фото?')) {
+            _context12.n = 2;
+            break;
+          }
+          return _context12.a(2);
+        case 2:
+          _context12.p = 2;
+          _context12.n = 3;
+          return apiCall('removeImageFromTask', {
+            id: currentTaskIdForUpload,
+            index: index
+          });
+        case 3:
+          result = _context12.v;
+          if (result.ok) {
+            renderAttachments(result.data);
+          }
+          _context12.n = 5;
+          break;
+        case 4:
+          _context12.p = 4;
+          _t1 = _context12.v;
+          alert('Ошибка при удалении: ' + _t1.message);
+        case 5:
+          return _context12.a(2);
       }
-
-      container.innerHTML = attachments.map((att, index) => {
-        if (att.type === 'image') {
-          return `
-            <div style="position:relative;display:inline-block;margin:4px;">
-              <img src="${att.url}" style="height:80px;border-radius:8px;cursor:pointer;" onclick="window.open('${att.url}', '_blank')" />
-              <button onclick="removeAttachment(${index})" style="position:absolute;top:-8px;right:-8px;background:#dc3545;color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;">×</button>
-            </div>
-          `;
-        }
-        return '';
-      }).join('');
+    }, _callee12, null, [[2, 4]]);
+  }));
+  return _removeAttachment.apply(this, arguments);
+}
+document.getElementById('openAddModal').addEventListener('click', openAddTaskModal);
+document.getElementById('addTaskModal').addEventListener('click', function (e) {
+  if (e.target === this) closeAddTaskModal();
+});
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    var modal = document.getElementById('addTaskModal');
+    if (modal.classList.contains('show')) {
+      closeAddTaskModal();
     }
+  }
+});
 
-    async function removeAttachment(index) {
-      if (!currentTaskIdForUpload) return;
-
-      if (!confirm('Удалить это фото?')) return;
-
-      try {
-        const result = await apiCall('removeImageFromTask', {
-          id: currentTaskIdForUpload,
-          index: index
-        });
-
-        if (result.ok) {
-          renderAttachments(result.data);
-        }
-      } catch (e) {
-        alert('Ошибка при удалении: ' + e.message);
+// ===== Initialization =====
+function init() {
+  return _init.apply(this, arguments);
+}
+function _init() {
+  _init = _asyncToGenerator(/*#__PURE__*/_regenerator().m(function _callee13() {
+    return _regenerator().w(function (_context13) {
+      while (1) switch (_context13.n) {
+        case 0:
+          loadFontSettings();
+          loadColumnColors();
+          _context13.n = 1;
+          return loadUser();
+        case 1:
+          startAutoRefresh();
+        case 2:
+          return _context13.a(2);
       }
-    }
-
-    // ===== Event Listeners =====
-    document.getElementById('openAddModal').addEventListener('click', openAddTaskModal);
-    document.getElementById('addTaskModal').addEventListener('click', function(e) {
-      if (e.target === this) closeAddTaskModal();
-    });
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') {
-        const modal = document.getElementById('addTaskModal');
-        if (modal.classList.contains('show')) {
-          closeAddTaskModal();
-        }
-      }
-    });
-
-    // ===== Initialization =====
-    async function init() {
-      loadFontSettings();
-      loadColumnColors();
-      await loadUser();
-      startAutoRefresh();
-    }
-
-    init();
-  </script>
+    }, _callee13);
+  }));
+  return _init.apply(this, arguments);
+}
+init();
+</script>
 </body>
 </html>
 

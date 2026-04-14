@@ -1,0 +1,36 @@
+{
+  "name": "kanban-admin-main",
+  "version": "1.0.0",
+  "description": "``` v2/ ├── README.md                 # Этот файл ├── cod_v2.gs                 # Backend API для Google Apps Script ├── select_user.html          # Страница выбора пользователя ├── index_v2.html             # Основная Kanban-доска (для обычных пользователей) ├── admin.html                # Админская панель └── SETUP_INSTRUCTIONS.md     # Инструкция по настройке ```",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/artteth/kanban-admin.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/artteth/kanban-admin/issues"
+  },
+  "homepage": "https://github.com/artteth/kanban-admin#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/plugin-transform-arrow-functions": "^7.27.1",
+    "@babel/plugin-transform-block-scoping": "^7.28.6",
+    "@babel/plugin-transform-classes": "^7.28.6",
+    "@babel/plugin-transform-destructuring": "^7.28.5",
+    "@babel/plugin-transform-parameters": "^7.27.7",
+    "@babel/plugin-transform-shorthand-properties": "^7.27.1",
+    "@babel/plugin-transform-template-literals": "^7.27.1",
+    "@babel/preset-env": "^7.29.2"
+  },
+  "dependencies": {
+    "regenerator-runtime": "^0.14.1"
+  }
+}
