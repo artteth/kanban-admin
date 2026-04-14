@@ -1409,26 +1409,26 @@
     }
 
     // ===== GOOGLE SHEETS API =====
-    function apiJsonp(action, params = {}) {
-      return new Promisefunction((resolve, reject) 
+    function apiJsonp(action, params) {
+      return new Promise(function(resolve, reject) {
         var callbackName = 'jsonp_callback_' + Date.now();
-        var urlParams = "mode=jsonp&action=" + encodeURIComponent(action)&callback=${callbackName;
+        var urlParams = "mode=jsonp&action=" + encodeURIComponent(action) + "&callback=" + callbackName;
         for (var key in params) {
           if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-            urlParams += "&" + encodeURIComponent(key) + "=${encodeURIComponent(params[key])}";
+            urlParams += "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
           }
         }
-        var url = "" + API_URL + "?${urlParams}";
+        var url = API_URL + "?" + urlParams;
 
         var script = document.createElement('script');
         script.src = url;
-        script.onerror = function() { return reject(new Error('JSONP request failed')); };
+        script.onerror = function() { reject(new Error('JSONP request failed')); };
 
-        window[callbackName] = function(response) 
+        window[callbackName] = function(response) {
           if (response && response.ok) {
             resolve(response.data || response);
-           else {
-            reject(new Error((response && response.error) || 'API error'));
+          } else {
+            reject(new Error(response.error || 'API error'));
           }
           delete window[callbackName];
           document.body.removeChild(script);
