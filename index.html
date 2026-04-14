@@ -809,6 +809,66 @@
   <script>
 "use strict";
 
+if (!Array.prototype.find) {
+  Array.prototype.find = function(callback, thisArg) {
+    for (var i = 0; i < this.length; i++) {
+      if (callback.call(thisArg, this[i], i, this)) return this[i];
+    }
+    return undefined;
+  };
+}
+if (!Array.prototype.filter) {
+  Array.prototype.filter = function(callback, thisArg) {
+    var result = [];
+    for (var i = 0; i < this.length; i++) {
+      if (callback.call(thisArg, this[i], i, this)) result.push(this[i]);
+    }
+    return result;
+  };
+}
+if (!Array.prototype.map) {
+  Array.prototype.map = function(callback, thisArg) {
+    var result = [];
+    for (var i = 0; i < this.length; i++) {
+      result.push(callback.call(thisArg, this[i], i, this));
+    }
+    return result;
+  };
+}
+if (!Array.prototype.forEach) {
+  Array.prototype.forEach = function(callback, thisArg) {
+    for (var i = 0; i < this.length; i++) {
+      callback.call(thisArg, this[i], i, this);
+    }
+  };
+}
+if (!Array.prototype.includes) {
+  Array.prototype.includes = function(searchElement, fromIndex) {
+    for (var i = fromIndex || 0; i < this.length; i++) {
+      if (this[i] === searchElement) return true;
+    }
+    return false;
+  };
+}
+if (!Array.prototype.reduce) {
+  Array.prototype.reduce = function(callback, initialValue) {
+    var accumulator = initialValue;
+    for (var i = 0; i < this.length; i++) {
+      accumulator = callback(accumulator, this[i], i, this);
+    }
+    return accumulator;
+  };
+}
+if (!Object.keys) {
+  Object.keys = function(obj) {
+    var keys = [];
+    for (var key in obj) {
+      if (obj.hasOwnProperty(key)) keys.push(key);
+    }
+    return keys;
+  };
+}
+
 function _regenerator() {
   /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/babel/babel/blob/main/packages/babel-helpers/LICENSE */var e,
     t,
