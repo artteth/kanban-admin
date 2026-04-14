@@ -810,11 +810,12 @@
 "use strict";
 
 window.onerror = function(msg, url, line, col, error) {
-  console.log('Error: ' + msg + ' at line ' + line);
+  alert('JS Error: ' + msg + ' line:' + line);
   return true;
 };
 
 try {
+alert('JS starting');
 if (!Array.prototype.find) {
   Array.prototype.find = function(callback, thisArg) {
     for (var i = 0; i < this.length; i++) {
@@ -2368,8 +2369,9 @@ function _init() {
   return _init.apply(this, arguments);
 }
 init();
+alert('JS init done');
 } catch(e) {
-  console.log('Script error: ' + e.message);
+  alert('Script error: ' + e.message);
 }
 </script>
 </body>
