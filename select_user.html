@@ -423,6 +423,13 @@
 
   <script>
     // ===== GOOGLE SHEETS API CONFIGURATION =====
+    window.onerror = function(msg, url, line, col, error) {
+      alert('JS Error: ' + msg + ' line:' + line);
+      return true;
+    };
+    
+    alert('JS starting select_user');
+    
     var API_URL = 'https://script.google.com/macros/s/AKfycbwOmfbiY6qcoZtJJFyazXATEQKiVakQoFvRtVBwJbtGIFQUlhxFSiXlL89mI2_cxEg0/exec';
     
     var CURRENT_USER_KEY = 'kanban_current_user_v2';
@@ -513,92 +520,71 @@
       }
     }
 
-    async function getUsers() {
-      try {
-        setSyncStatus('syncing', '🔄 Загрузка пользователей...');
-        var result = await apiJsonp('getUsers');
-        var users = Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+    function getUsers() {
+      return apiJsonp('getUsers').then(function(result) {
         setSyncStatus('ready', '✅ Загружено');
-        setTimeout(function() { return setSyncStatus('ready', ''); }, 2000);
-        return users;
-      } catch (e) {
+        setTimeout(function() { setSyncStatus('ready', ''); }, 2000);
+        return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+      })['catch'](function(e) {
         setSyncStatus('error', '❌ Ошибка загрузки');
         console.error('getUsers error:', e);
         return [];
-      }
+      });
     }
 
-    async function addUser(name, telegramId, role) {
-      try {
-        var result = await apiCall('addUser', {
-          name: name,
-          telegramId: telegramId || '',
-          role: role || 'user'
-        });
-        return result;
-      } catch (e) {
+    function addUser(name, telegramId, role) {
+      return apiCall('addUser', {
+        name: name,
+        telegramId: telegramId || '',
+        role: role || 'user'
+      })['catch'](function(e) {
         console.error('addUser error:', e);
         throw e;
-      }
+      });
     }
 
-    async function updateUser(userId, name, telegramId, role) {
-      try {
-        var result = await apiCall('updateUser', {
-          userId: userId,
-          name: name,
-          telegramId: telegramId || '',
-          role: role || 'user'
-        });
-        return result;
-      } catch (e) {
+    function updateUser(userId, name, telegramId, role) {
+      return apiCall('updateUser', {
+        userId: userId,
+        name: name,
+        telegramId: telegramId || '',
+        role: role || 'user'
+      })['catch'](function(e) {
         console.error('updateUser error:', e);
         throw e;
-      }
+      });
     }
 
-    async function deleteUser(userId) {
-      try {
-        var result = await apiCall('deleteUser', { userId: userId });
-        return result;
-      } catch (e) {
+    function deleteUser(userId) {
+      return apiCall('deleteUser', { userId: userId })['catch'](function(e) {
         console.error('deleteUser error:', e);
         throw e;
-      }
+      });
     }
 
-    async function addTask(title, plannedDate, assignedTo) {
-      try {
-        var result = await apiCall('addTask', {
-          title: title,
-          plannedDate: plannedDate || '',
-          assignedTo: assignedTo
-        });
-        return result;
-      } catch (e) {
+    function addTask(title, plannedDate, assignedTo) {
+      return apiCall('addTask', {
+        title: title,
+        plannedDate: plannedDate || '',
+        assignedTo: assignedTo
+        })['catch'](function(e) {
         console.error('addTask error:', e);
         throw e;
-      }
+      });
     }
 
-    async function updateTask(taskId, updates) {
-      try {
-        var result = await apiCall('updateTask', { id: taskId, updates });
-        return result;
-      } catch (e) {
+    function updateTask(taskId, updates) {
+      return apiCall('updateTask', { id: taskId, updates })['catch'](function(e) {
         console.error('updateTask error:', e);
         throw e;
-      }
+      });
     }
 
-    async function deleteTask(taskId) {
-      try {
-        var result = await apiCall('deleteTask', { id: taskId });
-        return result;
-      } catch (e) {
+    function deleteTask(taskId) {
+      return apiCall('deleteTask', { id: taskId })['catch'](function(e) {
         console.error('deleteTask error:', e);
         throw e;
-      }
+      });
     }
 
     // ===== State =====
@@ -607,10 +593,12 @@
     var editingUserId = null;
 
     // ===== Load & Render =====
-    async function loadUsers() {
+    function loadUsers() {
       setSyncStatus('syncing', '🔄 Загрузка...');
-      users = await getUsers();
-      renderUserList();
+      getUsers().then(function(result) {
+        users = result;
+        renderUserList();
+      });
     }
 
     function renderUserList() {
@@ -712,7 +700,7 @@ if (users.length === 0) {
       editingUserId = null;
     }
 
-    async function saveUser() {
+function saveUser() {
       var name = document.getElementById('userName').value.trim();
       var telegramId = document.getElementById('userTelegram').value.trim();
       var role = document.getElementById('userRole').value;
@@ -722,44 +710,39 @@ if (users.length === 0) {
         return;
       }
 
-      try {
-        if (editingUserId) {
-          await updateUser(editingUserId, name, telegramId, role);
-        } else {
-          await addUser(name, telegramId, role);
-        }
+      var action = editingUserId ? 
+        updateUser(editingUserId, name, telegramId, role) :
+        addUser(name, telegramId, role);
 
+      action.then(function() {
         closeUserModal();
-        await loadUsers();
+        loadUsers();
 
         if (editingUserId && selectedUserId === editingUserId) {
-          var updatedUser = users.find(function(u) { return u.userId === editingUserId); };
+          var updatedUser = users.find(function(u) { return u.userId === editingUserId; });
           if (updatedUser) selectedUserId = updatedUser.userId;
         }
 
         if (!editingUserId) {
           alert('✅ Пользователь "' + name + '" успешно добавлен!');
         }
-      } catch (e) {
+      })['catch'](function(e) {
         alert('Ошибка: ' + e.message);
-      }
+});
     }
 
-    async function confirmDeleteUser(userId) {
+    function confirmDeleteUser(userId) {
       if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
 
-      try {
-        await deleteUser(userId);
-
+      deleteUser(userId).then(function() {
         if (selectedUserId === userId) {
           selectedUserId = null;
           document.getElementById('continueBtn').classList.remove('active');
         }
-
-        await loadUsers();
-      } catch (e) {
+        loadUsers();
+      })['catch'](function(e) {
         alert('Ошибка при удалении: ' + e.message);
-      }
+      });
     }
 
     // ===== Event Listeners =====
@@ -779,11 +762,13 @@ if (users.length === 0) {
     });
 
     // ===== Initialization =====
-    async function init() {
-      await loadUsers();
+    function init() {
+      loadUsers();
+      alert('init done');
     }
 
     init();
+    alert('script loaded');
   <\/script>
 </body>
 </html>
