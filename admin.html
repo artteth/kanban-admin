@@ -1,0 +1,2758 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#667eea" />
+  <title>Kanban v2 - Локальная Админка</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    
+    .header {
+      background: white;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    
+    .view-toggle {
+      display: flex;
+      background: #f5f7fa;
+      border-radius: 10px;
+      padding: 4px;
+    }
+    
+    .view-toggle button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: transparent;
+      color: #666;
+    }
+    
+    .view-toggle button.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: #f5f7fa;
+      color: #666;
+    }
+
+    .btn-danger {
+      background: #ffebee;
+      color: #c62828;
+    }
+
+    .btn-success {
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+    
+    /* Settings */
+    .settings-container {
+      position: relative;
+    }
+    
+    .settings-btn {
+      background: rgba(255,255,255,0.2);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: white;
+      transition: all 0.3s;
+    }
+    
+    .settings-btn:hover {
+      background: rgba(255,255,255,0.3);
+    }
+    
+    .settings-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 8px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+      padding: 16px;
+      z-index: 1000;
+      min-width: 220px;
+      border: 1px solid #e1e5eb;
+    }
+    
+    .settings-dropdown.show {
+      display: block;
+    }
+    
+    .settings-dropdown h3 {
+      font-size: 14px;
+      color: #333;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    
+    .font-size-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .font-size-control button {
+      padding: 6px 10px;
+      border: 2px solid #667eea;
+      border-radius: 6px;
+      background: white;
+      color: #667eea;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      min-width: 32px;
+    }
+    
+    .font-size-control button:hover {
+      background: #667eea;
+      color: white;
+    }
+    
+    .font-size-value {
+      font-size: 13px;
+      color: #333;
+      min-width: 40px;
+      text-align: center;
+      font-weight: 500;
+    }
+    
+    .bold-btn {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #667eea;
+      border-radius: 6px;
+      background: white;
+      color: #667eea;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 10px;
+    }
+    
+    .bold-btn:hover {
+      background: #667eea;
+      color: white;
+    }
+    
+    .bold-btn.active {
+      background: #667eea;
+      color: white;
+    }
+    
+    .reset-btn {
+      width: 100%;
+      padding: 8px;
+      border: 2px solid #dc3545;
+      border-radius: 6px;
+      background: white;
+      color: #dc3545;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .reset-btn:hover {
+      background: #dc3545;
+      color: white;
+    }
+    
+    .color-settings {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+    
+    .color-row input[type="color"] {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    .card h2 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 16px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #e1e5eb;
+    }
+    
+    th {
+      font-size: 12px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      background: #f5f7fa;
+    }
+    
+    tr:hover {
+      background: #f9fafb;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .status-todo { background: #fff3e0; color: #f57c00; }
+    .status-in-progress { background: #e3f2fd; color: #1976d2; }
+    .status-done { background: #e8f5e9; color: #2e7d32; }
+    
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      margin-right: 4px;
+    }
+    
+    .btn-edit { background: #e3f2fd; color: #1976d2; }
+    .btn-edit:hover { background: #1976d2; color: white; }
+    
+    .btn-delete { background: #ffebee; color: #c62828; }
+    .btn-delete:hover { background: #c62828; color: white; }
+    
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .modal-overlay.show { display: flex; }
+    
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%;
+      max-width: 500px;
+    }
+    
+    .modal-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e5eb;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: inherit;
+    }
+    
+    .form-group textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    
+    .modal-btn {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    
+    .modal-btn-cancel {
+      background: #f5f7fa;
+      color: #666;
+    }
+    
+    .modal-btn-save {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    /* Date Picker Styles */
+    .date-picker-section {
+      margin-top: 12px;
+    }
+
+    .date-picker-label {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .date-quick-btns {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .date-quick-btn {
+      padding: 8px 12px;
+      border: 2px solid #e1e5eb;
+      border-radius: 8px;
+      background: white;
+      color: #333;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .date-quick-btn:hover {
+      border-color: #667eea;
+      background: #f5f7fa;
+    }
+
+    .date-quick-btn.active {
+      background: #667eea;
+      border-color: #667eea;
+      color: white;
+    }
+
+    .date-selected-display {
+      font-size: 14px;
+      color: #667eea;
+      font-weight: 600;
+      padding: 8px;
+      background: #f5f7fa;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .date-picker-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 10001;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .date-picker-modal.show {
+      display: flex;
+    }
+
+    .date-picker-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+    }
+
+    .date-picker-content {
+      position: relative;
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+
+    .date-picker-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .date-picker-nav {
+      background: #f5f7fa;
+      border: 1px solid #e1e5eb;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 18px;
+      cursor: pointer;
+      color: #333;
+    }
+
+    #currentMonthYear {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .date-picker-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .date-picker-weekdays span {
+      font-size: 12px;
+      color: #888;
+      padding: 5px;
+    }
+
+    .date-picker-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      margin-bottom: 15px;
+    }
+
+    .date-picker-day {
+      padding: 10px;
+      text-align: center;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .date-picker-day:hover {
+      background: #f5f7fa;
+    }
+
+    .date-picker-day.selected {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .date-picker-day.today {
+      border: 2px solid #667eea;
+    }
+
+    .date-picker-day.empty {
+      cursor: default;
+    }
+
+    .date-picker-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .date-picker-clear,
+    .date-picker-close {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .date-picker-clear {
+      background: #f5f7fa;
+      color: #666;
+    }
+
+    .date-picker-close {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .filters select,
+    .filters input {
+      padding: 10px 14px;
+      border: 2px solid #e1e5eb;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 12px 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    /* Kanban Board View */
+    #boardView {
+      display: none;
+      margin-bottom: 20px;
+    }
+    
+    #boardView.active {
+      display: block;
+    }
+    
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    
+    .column {
+      background: #dee3ea;
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 400px;
+    }
+    
+    .column-header {
+      font-weight: 600;
+      font-size: 16px;
+      color: #333;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border-radius: 8px;
+      background: #f5f7fa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .sort-btn {
+      background: #90a4ae;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    
+    .sort-btn:hover {
+      background: #78909c;
+    }
+    
+    .sort-btn.active {
+      background: #667eea;
+    }
+    
+    .task-count {
+      background: rgba(0,0,0,0.1);
+      border-radius: 10px;
+      padding: 2px 8px;
+      font-size: 14px;
+      margin-left: 8px;
+    }
+    
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .task-card {
+      background: white;
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      cursor: grab;
+      transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+      border-left: 4px solid #667eea;
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Анимации */
+    @keyframes cardArrive {
+      0% { opacity: 0; transform: translateY(-18px) scale(0.96); }
+      60% { opacity: 1; transform: translateY(4px) scale(1.01); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .task-card.just-arrived {
+      animation: cardArrive 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes syncPulse {
+      0%, 100% { box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0 rgba(74,144,217,0.7); }
+      50% { box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 12px rgba(74,144,217,0); }
+    }
+
+    .task-card.syncing { animation: syncPulse 1.2s ease-in-out infinite; }
+
+    .task-card.todo { border-left-color: #ff9800; }
+    .task-card.in-progress { border-left-color: #2196f3; }
+    .task-card.done { border-left-color: #4caf50; }
+    
+    /* Приоритетная подсветка */
+    .task-card.planned-active {
+      background: linear-gradient(135deg, #fff3cd 0%, #fff9e6 100%);
+      border-left: 4px solid #ffc107 !important;
+    }
+    
+    .task-card.planned-overdue {
+      background: linear-gradient(135deg, #ffdddd 0%, #ffe6e6 100%);
+      border-left: 4px solid #dc3545 !important;
+    }
+    
+    .task-card.planned-tomorrow {
+      background: linear-gradient(135deg, #fff3cd 0%, #fff9e6 100%);
+      border-left: 4px solid #ffc107 !important;
+    }
+    
+    .task-planned-today {
+      font-weight: 700 !important;
+      color: #c62828 !important;
+    }
+    
+    .task-planned-overdue {
+      font-weight: 600 !important;
+      color: #e65100 !important;
+    }
+    
+    .task-title {
+      font-size: var(--task-title-font-size, 15px);
+      font-weight: var(--task-title-font-weight, normal);
+      color: #333;
+      margin-bottom: 10px;
+      word-wrap: break-word;
+    }
+
+    .task-meta {
+      font-size: var(--task-meta-font-size, 12px);
+      font-weight: var(--task-meta-font-weight, normal);
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .task-planned {
+      font-size: var(--task-planned-font-size, 12px);
+      font-weight: var(--task-planned-font-weight, normal);
+      color: #667eea;
+      margin-bottom: 8px;
+    }
+    
+    .task-assignee {
+      font-size: 12px;
+      color: #666;
+      background: #f5f7fa;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    
+    .task-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .task-actions button {
+      flex: 1;
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: #667eea;
+      color: white;
+      transition: all 0.2s;
+    }
+    
+    .task-actions button:hover {
+      filter: brightness(1.1);
+      transform: scale(1.02);
+    }
+    
+    .table-view {
+      display: block;
+    }
+
+    .table-view.hidden {
+      display: none;
+    }
+
+    /* Recurring Tasks View */
+    .recurring-view {
+      display: none;
+    }
+
+    .recurring-view:not(.hidden) {
+      display: block;
+    }
+
+    .recurring-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .recurring-table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .recurring-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .recurring-table th {
+      background: #f5f7fa;
+      padding: 14px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 2px solid #e1e5eb;
+    }
+
+    .recurring-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid #f0f0f0;
+      color: #555;
+    }
+
+    .recurring-table tr:hover {
+      background: #f9fafb;
+    }
+
+    .recurring-table .action-btn {
+      padding: 6px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 6px;
+      transition: all 0.2s;
+    }
+
+    .recurring-table .btn-edit {
+      background: #f5f7fa;
+      color: #667eea;
+    }
+
+    .recurring-table .btn-delete {
+      background: #fee;
+      color: #dc3545;
+    }
+
+    .recurring-table .action-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 768px) {
+      /* Header wraps vertically */
+      .header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .header h1 {
+        margin-bottom: 12px;
+      }
+
+      .header-controls {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      /* Board becomes single column */
+      .board-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .column {
+        min-height: 300px;
+      }
+
+      /* Recurring table scrolls horizontally */
+      .recurring-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .recurring-header h2 {
+        font-size: 18px;
+      }
+
+      .recurring-table th,
+      .recurring-table td {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+
+      /* Table scrolls horizontally */
+      .table-view {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      table {
+        min-width: 800px;
+      }
+
+      /* Smaller fonts and buttons */
+      .btn {
+        padding: 8px 12px;
+        font-size: 14px;
+      }
+
+      .settings-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+
+      .task-card {
+        padding: 12px;
+      }
+
+      .task-title {
+        font-size: 14px;
+      }
+
+      .task-actions button {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+    }
+
+    /* Extra small devices */
+    @media (max-width: 480px) {
+      .header h1 {
+        font-size: 20px;
+      }
+
+      .column {
+        padding: 12px;
+      }
+
+      .column-header {
+        font-size: 14px;
+        padding: 10px 12px;
+      }
+
+      .task-card {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <h1>🔧 Админская панель</h1>
+      <div class="header-controls" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+        <div class="settings-container">
+          <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">⚙️</button>
+          <div class="settings-dropdown" id="settingsDropdown">
+            <h3>Заголовок задач</h3>
+            <div class="font-size-control">
+              <button onclick="changeFontSize('title', -2)">−</button>
+              <span class="font-size-value" id="fontSizeValueTitle">15px</span>
+              <button onclick="changeFontSize('title', 2)">+</button>
+            </div>
+            <button class="bold-btn" id="boldBtnTitle" onclick="toggleBold('title')">Жирный</button>
+
+            <h3 style="margin-top: 12px;">Даты и длительность</h3>
+            <div class="font-size-control">
+              <button onclick="changeFontSize('meta', -2)">−</button>
+              <span class="font-size-value" id="fontSizeValueMeta">12px</span>
+              <button onclick="changeFontSize('meta', 2)">+</button>
+            </div>
+            <button class="bold-btn" id="boldBtnMeta" onclick="toggleBold('meta')">Жирные даты</button>
+
+            <h3 style="margin-top: 12px;">Плановая дата</h3>
+            <div class="font-size-control">
+              <button onclick="changeFontSize('planned', -2)">−</button>
+              <span class="font-size-value" id="fontSizeValuePlanned">12px</span>
+              <button onclick="changeFontSize('planned', 2)">+</button>
+            </div>
+            <button class="bold-btn" id="boldBtnPlanned" onclick="toggleBold('planned')">Жирная</button>
+
+            <button class="reset-btn" onclick="resetFontSettings()" style="margin-top: 12px;">Сбросить всё</button>
+
+            <h3 style="margin-top: 16px;">Цвета столбцов</h3>
+            <div class="color-settings">
+              <div class="color-row">
+                <span>📝 Задания:</span>
+                <input type="color" id="todoHeaderColor" value="#fff3e0" onchange="updateColumnColors()">
+                <input type="color" id="todoBgColor" value="#fff8e1" onchange="updateColumnColors()">
+              </div>
+              <div class="color-row">
+                <span>🔄 В работе:</span>
+                <input type="color" id="inProgressHeaderColor" value="#e3f2fd" onchange="updateColumnColors()">
+                <input type="color" id="inProgressBgColor" value="#e3f2fd" onchange="updateColumnColors()">
+              </div>
+              <div class="color-row">
+                <span>✅ Готово:</span>
+                <input type="color" id="doneHeaderColor" value="#e8f5e9" onchange="updateColumnColors()">
+                <input type="color" id="doneBgColor" value="#e8f5e9" onchange="updateColumnColors()">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="view-toggle">
+          <button id="viewTableBtn" class="active" onclick="setView('table')">📊 Таблица</button>
+          <button id="viewBoardBtn" onclick="setView('board')">📋 Доска</button>
+          <button id="viewRecurringBtn" onclick="setView('recurring')">🔄 Циклические</button>
+        </div>
+        <a href="select_user.html" class="btn btn-secondary">👤 Выбор пользователя</a>
+        <button class="btn btn-primary" onclick="openAddTaskModal()">➕ Добавить задачу</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats" id="statsContainer">
+      <div class="stat-card">
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Всего задач</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statTodo">0</div>
+        <div class="stat-label">К выполнению</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statInProgress">0</div>
+        <div class="stat-label">В работе</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statDone">0</div>
+        <div class="stat-label">Готово</div>
+      </div>
+    </div>
+
+    <!-- Recurring Tasks View -->
+    <div id="recurringView" class="recurring-view hidden">
+      <div class="card">
+        <div class="recurring-header">
+          <h2>🔄 Циклические задачи</h2>
+          <button class="btn btn-primary" onclick="openAddRecurringModal()">➕ Добавить циклическую</button>
+        </div>
+        
+        <div class="recurring-table-wrapper">
+          <table class="recurring-table">
+            <thead>
+              <tr>
+                <th>Название</th>
+                <th>Период</th>
+                <th>След. дата</th>
+                <th>Исполнитель</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="recurringTasksBody">
+              <tr><td colspan="5" style="text-align:center;padding:40px;color:#888;">📭 Нет циклических задач</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kanban Board View -->
+    <div id="boardView">
+      <!-- Filters Bar -->
+      <div class="card" style="margin-bottom: 16px; padding: 16px 20px;">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <select id="filterUserBoard" onchange="applyFiltersBoard()" style="padding: 10px 14px; border: 2px solid #e1e5eb; border-radius: 10px; font-size: 14px; min-width: 180px; background: white;">
+            <option value="">👤 Все пользователи</option>
+          </select>
+          <select id="filterStatusBoard" onchange="applyFiltersBoard()" style="padding: 10px 14px; border: 2px solid #e1e5eb; border-radius: 10px; font-size: 14px; min-width: 150px; background: white;">
+            <option value="">📊 Все статусы</option>
+            <option value="todo">К выполнению</option>
+            <option value="in-progress">В работе</option>
+            <option value="done">Готово</option>
+          </select>
+          <input type="text" id="filterSearchBoard" placeholder="🔍 Поиск..." oninput="applyFiltersBoard()" style="padding: 10px 14px; border: 2px solid #e1e5eb; border-radius: 10px; font-size: 14px; flex: 1; min-width: 200px; background: white;" />
+          <button class="btn btn-secondary" onclick="resetFiltersBoard()" style="padding: 10px 16px; white-space: nowrap;">🔄 Сбросить</button>
+        </div>
+      </div>
+      
+      <div class="board-grid">
+        <div class="column todo" data-status="todo">
+          <div class="column-header">
+            <span>📝 Задания<span class="task-count" id="boardCountTodo">0</span></span>
+            <button class="sort-btn" data-status="todo" onclick="sortBoardTasks('todo')">📅↑↓</button>
+          </div>
+          <div class="task-list" id="boardTodoTasks"></div>
+        </div>
+        <div class="column in-progress" data-status="in-progress">
+          <div class="column-header">
+            <span>🔄 В работе<span class="task-count" id="boardCountInProgress">0</span></span>
+            <button class="sort-btn" data-status="in-progress" onclick="sortBoardTasks('in-progress')">📅↑↓</button>
+          </div>
+          <div class="task-list" id="boardInProgressTasks"></div>
+        </div>
+        <div class="column done" data-status="done">
+          <div class="column-header">
+            <span>✅ Готово<span class="task-count" id="boardCountDone">0</span></span>
+            <button class="sort-btn" data-status="done" onclick="sortBoardTasks('done')">📅↑↓</button>
+          </div>
+          <div class="task-list" id="boardDoneTasks"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="card table-view" id="tableView">
+      <h2>📋 Все задачи</h2>
+      
+      <div class="filters">
+        <select id="filterUser" onchange="applyFilters()">
+          <option value="">Все пользователи</option>
+        </select>
+        <select id="filterStatus" onchange="applyFilters()">
+          <option value="">Все статусы</option>
+          <option value="todo">К выполнению</option>
+          <option value="in-progress">В работе</option>
+          <option value="done">Готово</option>
+        </select>
+        <input type="text" id="filterSearch" placeholder="🔍 Поиск..." oninput="applyFilters()" />
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Название</th>
+            <th>Статус</th>
+            <th>Исполнитель</th>
+            <th>Плановая дата</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody id="tasksTableBody"></tbody>
+      </table>
+    </div>
+
+    <!-- Users -->
+    <div class="card">
+      <h2>👤 Пользователи</h2>
+      <button class="btn btn-primary" onclick="openAddUserModal()" style="margin-bottom: 16px;">➕ Добавить пользователя</button>
+      <table>
+        <thead>
+          <tr>
+            <th>Имя</th>
+            <th>Telegram</th>
+            <th>Роль</th>
+            <th>Задач</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody id="usersTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Task Modal -->
+  <div class="modal-overlay" id="taskModal">
+    <div class="modal-content">
+      <div class="modal-title" id="taskModalTitle">Новая задача</div>
+      
+      <div class="form-group">
+        <label for="taskTitle">Название задачи *</label>
+        <textarea id="taskTitle" placeholder="Введите описание задачи..."></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label for="taskAssignee">👤 Исполнитель *</label>
+        <select id="taskAssignee">
+          <option value="">Выберите исполнителя...</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="taskStatus">📊 Статус</label>
+        <select id="taskStatus">
+          <option value="todo">К выполнению</option>
+          <option value="in-progress">В работе</option>
+          <option value="done">Готово</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="taskPlannedDate">📅 Плановая дата</label>
+        <div class="date-picker-section">
+          <div class="date-picker-label">📅 Запланировать на:</div>
+          <div class="date-quick-btns">
+            <button class="date-quick-btn" data-days="0" onclick="adminSelectPlannedDate(0)">Сегодня</button>
+            <button class="date-quick-btn" data-days="1" onclick="adminSelectPlannedDate(1)">Завтра</button>
+            <button class="date-quick-btn" data-adjust="-1" onclick="adminAdjustPlannedDate(-1)">−1 день</button>
+            <button class="date-quick-btn" data-adjust="1" onclick="adminAdjustPlannedDate(1)">+1 день</button>
+            <button class="date-quick-btn" onclick="adminToggleDatePicker()">📅 Календарь</button>
+          </div>
+          <div class="date-selected-display" id="adminDateSelectedDisplay"></div>
+          <input type="date" id="taskPlannedDate" style="display:none;" />
+        </div>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-cancel" onclick="closeTaskModal()">Отмена</button>
+        <button class="modal-btn modal-btn-save" onclick="saveTask()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recurring Task Modal -->
+  <div class="modal-overlay" id="recurringModal">
+    <div class="modal-content">
+      <div class="modal-title" id="recurringModalTitle">Новая циклическая задача</div>
+      
+      <div class="form-group">
+        <label for="recurringTitle">Название задачи *</label>
+        <input type="text" id="recurringTitle" placeholder="Например: Показания счетчика" />
+      </div>
+      
+      <div class="form-group">
+        <label for="recurringAssignee">👤 Исполнитель *</label>
+        <select id="recurringAssignee">
+          <option value="">Выберите исполнителя...</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>🔄 Период повторения *</label>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <span>Каждые</span>
+          <input type="number" id="recurringInterval" min="1" max="1440" value="1" 
+               style="width:60px;padding:8px;border:2px solid #e1e5eb;border-radius:8px;" />
+          <select id="recurringType" style="flex:1;padding:8px;border:2px solid #e1e5eb;border-radius:8px;">
+            <option value="minutes">минут</option>
+            <option value="hours">часов</option>
+            <option value="days">дней</option>
+            <option value="weeks">недель</option>
+            <option value="months">месяцев</option>
+            <option value="years">лет</option>
+          </select>
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="recurringNextDate">📅 Первое выполнение *</label>
+        <input type="datetime-local" id="recurringNextDate" />
+      </div>
+      
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-cancel" onclick="closeRecurringModal()">Отмена</button>
+        <button class="modal-btn modal-btn-save" onclick="saveRecurringTask()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Modal -->
+  
+  <!-- Date Picker Modal -->
+  <div class="date-picker-modal" id="adminDatePickerModal">
+    <div class="date-picker-overlay" onclick="adminCloseDatePicker()"></div>
+    <div class="date-picker-content">
+      <div class="date-picker-header">
+        <button class="date-picker-nav" id="adminPrevMonth">&lt;</button>
+        <span id="adminCurrentMonthYear"></span>
+        <button class="date-picker-nav" id="adminNextMonth">&gt;</button>
+      </div>
+      <div class="date-picker-weekdays">
+        <span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span>
+      </div>
+      <div class="date-picker-days" id="adminDatePickerDays"></div>
+      <div class="date-picker-actions">
+        <button class="date-picker-clear" id="adminClearDate">Очистить</button>
+        <button class="date-picker-close" id="adminCloseDatePicker">Закрыть</button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="modal-overlay" id="userModal">
+    <div class="modal-content">
+      <div class="modal-title" id="userModalTitle">Новый пользователь</div>
+      
+      <div class="form-group">
+        <label for="userName">Имя *</label>
+        <input type="text" id="userName" placeholder="Введите имя" />
+      </div>
+      
+      <div class="form-group">
+        <label for="userTelegram">Telegram</label>
+        <input type="text" id="userTelegram" placeholder="@username" />
+      </div>
+      
+      <div class="form-group">
+        <label for="userRole">Роль</label>
+        <select id="userRole">
+          <option value="user">Пользователь</option>
+          <option value="admin">Админ</option>
+        </select>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-cancel" onclick="closeUserModal()">Отмена</button>
+        <button class="modal-btn modal-btn-save" onclick="saveUser()">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== GOOGLE SHEETS API CONFIGURATION =====
+    var API_URL = 'https://script.google.com/macros/s/AKfycbwOmfbiY6qcoZtJJFyazXATEQKiVakQoFvRtVBwJbtGIFQUlhxFSiXlL89mI2_cxEg0/exec';
+    
+    var USERS_KEY = 'kanban_v2_users';
+    var TASKS_KEY = 'kanban_v2_tasks';
+
+    // Sync status management
+    function setSyncStatus(status, message) {
+      // Admin page doesn't have sync status indicator in UI
+      console.log('Sync:', message);
+    }
+
+    function getTodayStr() {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      var d = String(now.getDate()).padStart(2, '0');
+      return "" + y + "-${m}-${d}";
+    }
+
+    function getNowDatetimeLocal() {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      var d = String(now.getDate()).padStart(2, '0');
+      var h = String(now.getHours()).padStart(2, '0');
+      var min = String(now.getMinutes()).padStart(2, '0');
+      return "" + y + "-${m}-${d}T${h}:${min}";
+    }
+
+    function getDateOffsetStr(daysOffset) {
+      var date = new Date();
+      date.setDate(date.getDate() + daysOffset);
+      var y = date.getFullYear();
+      var m = String(date.getMonth() + 1).padStart(2, '0');
+      var d = String(date.getDate()).padStart(2, '0');
+      return "" + y + "-${m}-${d}";
+    }
+
+    function formatDateWithDay(dateStr) {
+      if (!dateStr) return '';
+      var parts = dateStr.split('-');
+      var date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      var parts = dateStr.split('-');
+      var date = new Date(parts[0], parts[1] - 1, parts[2]);
+      return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+    }
+
+    function escapeHtml(text) {
+      var div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function generateId() {
+      return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+
+    function generateUserId() {
+      return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+    }
+
+    // ===== GOOGLE SHEETS API =====
+    function apiJsonp(action, params = {}) {
+      return new Promisefunction((resolve, reject) 
+        var callbackName = 'jsonp_callback_' + Date.now();
+        var urlParams = "mode=jsonp&action=" + encodeURIComponent(action)&callback=${callbackName;
+        for (var key in params) {
+          if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
+            urlParams += "&" + encodeURIComponent(key) + "=${encodeURIComponent(params[key])}";
+          }
+        }
+        var url = "" + API_URL + "?${urlParams}";
+
+        var script = document.createElement('script');
+        script.src = url;
+        script.onerror = function() { return reject(new Error('JSONP request failed')); };
+
+        window[callbackName] = function(response) 
+          if (response && response.ok) {
+            resolve(response.data || response);
+           else {
+            reject(new Error((response && response.error) || 'API error'));
+          }
+          delete window[callbackName];
+          document.body.removeChild(script);
+        };
+
+        document.body.appendChild(script);
+      });
+    }
+
+    async function apiCall(action, payload = {}) {
+      try {
+        return await apiJsonp(action, payload);
+      } catch (e) {
+        console.error('API call error:', e);
+        throw e;
+      }
+    }
+
+    async function getUsers() {
+      try {
+        var result = await apiJsonp('getUsers');
+        return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+      } catch (e) {
+        console.error('getUsers error:', e);
+        return [];
+      }
+    }
+
+    async function getTasks() {
+      try {
+        var result = await apiJsonp('getTasks', {});
+        return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+      } catch (e) {
+        console.error('getTasks error:', e);
+        return [];
+      }
+    }
+
+    async function addTask(title, plannedDate, assignedTo, status = 'todo') {
+      try {
+        var result = await apiCall('addTask', {
+          title: title,
+          plannedDate: plannedDate || '',
+          assignedTo: assignedTo
+        });
+        return result;
+      } catch (e) {
+        console.error('addTask error:', e);
+        throw e;
+      }
+    }
+
+    async function updateTask(taskId, updates) {
+      try {
+        var result = await apiCall('updateTask', { id: taskId, updates });
+        return result;
+      } catch (e) {
+        console.error('updateTask error:', e);
+        throw e;
+      }
+    }
+
+    async function deleteTask(taskId) {
+      try {
+        var result = await apiCall('deleteTask', { id: taskId });
+        return result;
+      } catch (e) {
+        console.error('deleteTask error:', e);
+        throw e;
+      }
+    }
+
+    async function addUser(name, telegramId, role) {
+      try {
+        var result = await apiCall('addUser', {
+          name: name,
+          telegramId: telegramId || '',
+          role: role || 'user'
+        });
+        return result;
+      } catch (e) {
+        console.error('addUser error:', e);
+        throw e;
+      }
+    }
+
+    async function updateUser(userId, name, telegramId, role) {
+      try {
+        var result = await apiCall('updateUser', {
+          userId: userId,
+          name: name,
+          telegramId: telegramId || '',
+          role: role || 'user'
+        });
+        return result;
+      } catch (e) {
+        console.error('updateUser error:', e);
+        throw e;
+      }
+    }
+
+    async function deleteUser(userId) {
+      try {
+        var result = await apiCall('deleteUser', { userId: userId });
+        return result;
+      } catch (e) {
+        console.error('deleteUser error:', e);
+        throw e;
+      }
+    }
+
+    // ===== State =====
+    var tasks = [];
+    var users = [];
+    var filteredTasks = [];
+    var editingTaskId = null;
+    var editingUserId = null;
+    var currentView = 'table';
+    var sortState = { 'todo': null, 'in-progress': null, 'done': null };
+    var pendingTaskIds = new Set();
+    var AUTO_REFRESH_SECONDS = 30;
+    var autoRefreshInterval = null;
+
+    // ===== Font Settings Config =====
+    var FONT_SETTINGS = {
+      title: {
+        storageSizeKey: 'taskTitleFontSize',
+        storageBoldKey: 'taskTitleFontBold',
+        cssSizeVar: '--task-title-font-size',
+        cssWeightVar: '--task-title-font-weight',
+        defaultSize: 15,
+        min: 12,
+        max: 40,
+        valueElementId: 'fontSizeValueTitle',
+        boldButtonId: 'boldBtnTitle'
+      },
+      meta: {
+        storageSizeKey: 'taskMetaFontSize',
+        storageBoldKey: 'taskMetaFontBold',
+        cssSizeVar: '--task-meta-font-size',
+        cssWeightVar: '--task-meta-font-weight',
+        defaultSize: 12,
+        min: 10,
+        max: 30,
+        valueElementId: 'fontSizeValueMeta',
+        boldButtonId: 'boldBtnMeta'
+      },
+      planned: {
+        storageSizeKey: 'taskPlannedFontSize',
+        storageBoldKey: 'taskPlannedFontBold',
+        cssSizeVar: '--task-planned-font-size',
+        cssWeightVar: '--task-planned-font-weight',
+        defaultSize: 12,
+        min: 10,
+        max: 30,
+        valueElementId: 'fontSizeValuePlanned',
+        boldButtonId: 'boldBtnPlanned'
+      }
+    };
+
+    // ===== Settings Functions =====
+    function toggleSettings() {
+      var dropdown = document.getElementById('settingsDropdown');
+      dropdown.classList.toggle('show');
+    }
+
+    function changeFontSize(type, delta) {
+      var cfg = FONT_SETTINGS[type];
+      if (!cfg) return;
+
+      var currentSize = parseInt(localStorage.getItem(cfg.storageSizeKey)) || cfg.defaultSize;
+      var newSize = currentSize + delta;
+      newSize = Math.max(cfg.min, Math.min(cfg.max, newSize));
+      setFontSize(type, newSize);
+    }
+
+    function setFontSize(type, size) {
+      var cfg = FONT_SETTINGS[type];
+      if (!cfg) return;
+
+      var root = document.documentElement;
+      root.style.setProperty(cfg.cssSizeVar, size + 'px');
+      localStorage.setItem(cfg.storageSizeKey, size);
+      updateFontSizeDisplay(type, size);
+    }
+
+    function updateFontSizeDisplay(type, size) {
+      var cfg = FONT_SETTINGS[type];
+      if (!cfg) return;
+
+      var valueEl = document.getElementById(cfg.valueElementId);
+      if (valueEl) {
+        valueEl.textContent = size + 'px';
+      }
+    }
+
+    function resetFontSettings() {
+      Object.keys(FONT_SETTINGS).forEach(function(type) { return {; }
+        var cfg = FONT_SETTINGS[type];
+        setFontSize(type, cfg.defaultSize);
+        localStorage.setItem(cfg.storageBoldKey, 'false');
+        var root = document.documentElement;
+        root.style.setProperty(cfg.cssWeightVar, 'normal');
+        updateBoldButton(type, false);
+      });
+    }
+
+    function toggleBold(type) {
+      var cfg = FONT_SETTINGS[type];
+      if (!cfg) return;
+
+      var isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
+      var newBold = !isBold;
+      localStorage.setItem(cfg.storageBoldKey, newBold);
+      var root = document.documentElement;
+      root.style.setProperty(cfg.cssWeightVar, newBold ? 'bold' : 'normal');
+      updateBoldButton(type, newBold);
+    }
+
+    function updateBoldButton(type, isBold) {
+      var cfg = FONT_SETTINGS[type];
+      if (!cfg) return;
+
+      var btn = document.getElementById(cfg.boldButtonId);
+      if (btn) {
+        btn.classList.toggle('active', isBold);
+      }
+    }
+
+    function loadFontSettings() {
+      Object.keys(FONT_SETTINGS).forEach(function(type) { return {; }
+        var cfg = FONT_SETTINGS[type];
+
+        var savedSize = localStorage.getItem(cfg.storageSizeKey);
+        var sizeToApply = savedSize ? parseInt(savedSize) : cfg.defaultSize;
+        setFontSize(type, sizeToApply);
+
+        var isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
+        var root = document.documentElement;
+        root.style.setProperty(cfg.cssWeightVar, isBold ? 'bold' : 'normal');
+        updateBoldButton(type, isBold);
+      });
+    }
+
+    function updateColumnColors() {
+      var colors = {
+        todo: {
+          header: document.getElementById('todoHeaderColor').value,
+          bg: document.getElementById('todoBgColor').value
+        },
+        inProgress: {
+          header: document.getElementById('inProgressHeaderColor').value,
+          bg: document.getElementById('inProgressBgColor').value
+        },
+        done: {
+          header: document.getElementById('doneHeaderColor').value,
+          bg: document.getElementById('doneBgColor').value
+        }
+      };
+
+      localStorage.setItem('columnColors', JSON.stringify(colors));
+
+      var root = document.documentElement;
+      root.style.setProperty('--bg-todo-header', colors.todo.header);
+      root.style.setProperty('--bg-progress-header', colors.inProgress.header);
+      root.style.setProperty('--bg-done-header', colors.done.header);
+      root.style.setProperty('--bg-todo', colors.todo.bg);
+      root.style.setProperty('--bg-progress', colors.inProgress.bg);
+      root.style.setProperty('--bg-done', colors.done.bg);
+    }
+
+    function loadColumnColors() {
+      var saved = localStorage.getItem('columnColors');
+      if (saved) {
+        var colors = JSON.parse(saved);
+        document.getElementById('todoHeaderColor').value = colors.todo.header;
+        document.getElementById('todoBgColor').value = colors.todo.bg;
+        document.getElementById('inProgressHeaderColor').value = colors.inProgress.header;
+        document.getElementById('inProgressBgColor').value = colors.inProgress.bg;
+        document.getElementById('doneHeaderColor').value = colors.done.header;
+        document.getElementById('doneBgColor').value = colors.done.bg;
+        updateColumnColors();
+      }
+    }
+
+    // Close settings when clicking outside
+    document.addEventListener('click', function(e) {
+      var settingsContainer = document.querySelector('.settings-container');
+      var dropdown = document.getElementById('settingsDropdown');
+      if (settingsContainer && !settingsContainer.contains(e.target)) {
+        dropdown.classList.remove('show');
+      }
+    });
+
+    // ===== View Toggle =====
+    var ADMIN_VIEW_KEY = 'kanban_admin_view_mode';
+
+    function setView(view) {
+      currentView = view;
+      localStorage.setItem(ADMIN_VIEW_KEY, view);
+
+      var boardView = document.getElementById('boardView');
+      var tableView = document.getElementById('tableView');
+      var recurringView = document.getElementById('recurringView');
+      var viewTableBtn = document.getElementById('viewTableBtn');
+      var viewBoardBtn = document.getElementById('viewBoardBtn');
+      var viewRecurringBtn = document.getElementById('viewRecurringBtn');
+
+      // Скрыть все
+      if (boardView) boardView.classList.remove('active');
+      if (tableView) tableView.classList.add('hidden');
+      if (recurringView) recurringView.classList.add('hidden');
+
+      // Убрать active у кнопок
+      if (viewTableBtn) viewTableBtn.classList.remove('active');
+      if (viewBoardBtn) viewBoardBtn.classList.remove('active');
+      if (viewRecurringBtn) viewRecurringBtn.classList.remove('active');
+
+      // Показать выбранное
+      if (view === 'board') {
+        boardView.classList.add('active');
+        if (viewBoardBtn) viewBoardBtn.classList.add('active');
+        populateBoardFilters();
+        var data = filteredTasks.length ? filteredTasks : tasks;
+        renderBoardViewWithData(data);
+      } else if (view === 'recurring') {
+        recurringView.classList.remove('hidden');
+        if (viewRecurringBtn) viewRecurringBtn.classList.add('active');
+        loadRecurringTasks();
+      } else {
+        tableView.classList.remove('hidden');
+        if (viewTableBtn) viewTableBtn.classList.add('active');
+      }
+    }
+
+    function loadSavedView() {
+      var savedView = localStorage.getItem(ADMIN_VIEW_KEY) || 'table';
+      setView(savedView);
+    }
+
+    // ===== Board Filters =====
+    function populateBoardFilters() {
+      var select = document.getElementById('filterUserBoard');
+      var currentValue = select.value;
+      select.innerHTML = '<option value="">👤 Все пользователи</option>';
+
+      users.forEach(function(user) { return {; }
+        var option = document.createElement('option');
+        option.value = user.userId;
+        option.textContent = user.name + (user.role === 'admin' ? ' (Админ)' : '');
+        select.appendChild(option);
+      });
+
+      // Сохраняем выбранное значение
+      if (currentValue) {
+        select.value = currentValue;
+      }
+    }
+
+    function applyFiltersBoard() {
+      var userId = document.getElementById('filterUserBoard').value;
+      var status = document.getElementById('filterStatusBoard').value;
+      var search = document.getElementById('filterSearchBoard').value.toLowerCase();
+
+      filteredTasks = tasks.filter(function(task) { return {; }
+        if (userId && task.assignedTo !== userId) return false;
+        if (status && task.status !== status) return false;
+        if (search && !task.title.toLowerCase().includes(search)) return false;
+        return true;
+      });
+
+      // Синхронизием фильтры с таблицей
+      document.getElementById('filterUser').value = userId;
+      document.getElementById('filterStatus').value = status;
+      document.getElementById('filterSearch').value = search;
+
+      renderBoardViewWithData(filteredTasks);
+      updateStats();
+    }
+
+    function resetFiltersBoard() {
+      document.getElementById('filterUserBoard').value = '';
+      document.getElementById('filterStatusBoard').value = '';
+      document.getElementById('filterSearchBoard').value = '';
+      
+      // Синхронизируем с таблицей
+      document.getElementById('filterUser').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterSearch').value = '';
+      
+      applyFiltersBoard();
+    }
+
+    // ===== Board View Rendering =====
+    function renderBoardViewWithData(data) {
+      if (!data || data.length === 0) {
+        // Показываем пустое состояние
+        document.getElementById('boardTodoTasks').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Задач нет</div>';
+        document.getElementById('boardInProgressTasks').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Задач нет</div>';
+        document.getElementById('boardDoneTasks').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Задач нет</div>';
+        document.getElementById('boardCountTodo').textContent = '0';
+        document.getElementById('boardCountInProgress').textContent = '0';
+        document.getElementById('boardCountDone').textContent = '0';
+        return;
+      }
+
+      var todoTasks = data.filter(function(t) { return t.status === 'todo'); };
+      var inProgressTasks = data.filter(function(t) { return t.status === 'in-progress'); };
+      var doneTasks = data.filter(function(t) { return t.status === 'done'); };
+
+      // Сортировка с приоритетами дат
+      var today = getTodayStr();
+
+      var sortTasksByPriority = function(tasks, status) 
+        if (!tasks || tasks.length === 0) return [];
+
+        var activeGroup = tasks.filter(function(t) { return t.plannedDate && t.plannedDate <= today); };
+        var futureGroup = tasks.filter(function(t) { return t.plannedDate && t.plannedDate > today); };
+        var noDateGroup = tasks.filter(function(t) { return !t.plannedDate); };
+
+        var overdueGroup = activeGroup.filter(function(t) { return t.plannedDate < today); };
+        var todayGroup = activeGroup.filter(function(t) { return t.plannedDate === today); };
+
+        overdueGroup.sortfunction((a, b) { return a.plannedDate.localeCompare(b.plannedDate)); };
+        todayGroup.sortfunction((a, b) { return a.plannedDate.localeCompare(b.plannedDate)); };
+        futureGroup.sortfunction((a, b) { return a.plannedDate.localeCompare(b.plannedDate)); };
+
+        if (sortState[status]) {
+          var sortFn = function(a, b) { return {; }
+            var dateA = a.startDate ? new Date(a.startDate) : new Date(0);
+            var dateB = b.startDate ? new Date(b.startDate) : new Date(0);
+            return sortState[status] === 'asc' ? dateA - dateB : dateB - dateA;
+          ;
+          todayGroup.sort(sortFn);
+          overdueGroup.sort(sortFn);
+          futureGroup.sort(sortFn);
+          noDateGroup.sort(sortFn);
+        }
+
+        return [todayGroup, overdueGroup, futureGroup, noDateGroup];
+      };
+
+      var sortedTodo = sortTasksByPriority(todoTasks, 'todo');
+      var sortedInProgress = sortTasksByPriority(inProgressTasks, 'in-progress');
+      var sortedDone = sortTasksByPriority(doneTasks, 'done');
+
+      document.getElementById('boardCountTodo').textContent = sortedTodo.length;
+      document.getElementById('boardCountInProgress').textContent = sortedInProgress.length;
+      document.getElementById('boardCountDone').textContent = sortedDone.length;
+
+      document.getElementById('boardTodoTasks').innerHTML = sortedTodo.map(function(task) { return renderTaskCard(task)).join(''); };
+      document.getElementById('boardInProgressTasks').innerHTML = sortedInProgress.map(function(task) { return renderTaskCard(task)).join(''); };
+      document.getElementById('boardDoneTasks').innerHTML = sortedDone.map(function(task) { return renderTaskCard(task)).join(''); };
+    }
+
+    function renderBoardView() {
+      var data = filteredTasks.length ? filteredTasks : tasks;
+      renderBoardViewWithData(data);
+    }
+    
+    function renderTaskCard(task) {
+      var assignee = users.find(function(u) { return u.userId === task.assignedTo); };
+      var assigneeName = assignee ? assignee.name : 'Не назначен';
+      
+      // Приоритетная подсветка
+      var cardClass = 'task-card ' + task.status;
+      if (task.plannedDate && task.status !== 'done') {
+        var today = getTodayStr();
+        var tomorrow = getDateOffsetStr(1);
+        
+        if (task.plannedDate < today) {
+          cardClass += ' planned-overdue';
+        } else if (task.plannedDate === today) {
+          cardClass += ' planned-active';
+        } else if (task.plannedDate === tomorrow) {
+          cardClass += ' planned-tomorrow';
+        }
+      }
+      
+      var plannedDateHtml = '';
+      if (task.plannedDate) {
+        var today = getTodayStr();
+        var tomorrow = getDateOffsetStr(1);
+        
+        if (task.status === 'done') {
+          plannedDateHtml = "<div class="task-planned">📌 Было на: " + formatDateWithDay(task.plannedDate) + "</div>";
+        } else if (task.plannedDate < today) {
+          plannedDateHtml = "<div class="task-planned task-planned-overdue">📌 Просрочено: " + formatDate(task.plannedDate) + "</div>";
+        } else if (task.plannedDate === today) {
+          plannedDateHtml = `<div class="task-planned task-planned-today">🎯 СЕГОДНЯ!</div>`;
+        } else if (task.plannedDate === tomorrow) {
+          plannedDateHtml = `<div class="task-planned">📅 Завтра!</div>`;
+        } else {
+          plannedDateHtml = "<div class="task-planned">📅 " + formatDateWithDay(task.plannedDate) + "</div>";
+        }
+      }
+      
+      return "
+        <div class="" + cardClass + "" data-id="${task.id}">
+          <div class="task-title">${escapeHtml(task.title)}</div>
+          ${plannedDateHtml}
+          <div class="task-assignee">👤 ${escapeHtml(assigneeName)}</div>
+          ${task.startDate ? "<div class="task-meta">📅 Создано: ${formatDate(task.startDate)}</div>" : ''}
+          " + task.duration ? `<div class="task-meta">⏱️ ${task.duration + "</div>" : ''}
+          <div class="task-actions">
+            <button onclick="openEditTaskModal('${task.id}')">✏️</button>
+            ${task.status !== 'todo' ? '<button onclick="moveTask(\'' + task.id + '\', \'back\')">← Назад</button>' : ''}
+            ${task.status !== 'done' ? '<button onclick="moveTask(\'' + task.id + '\', \'forward\')">Вперёд →</button>' : ''}
+            <button onclick="deleteTaskById('${task.id}')" style="background: #f44336;">🗑️</button>
+          </div>
+        </div>
+      `;
+    }
+    
+    function moveTask(taskId, direction) {
+      var task = tasks.find(function(t) { return t.id === taskId); };
+      if (!task) return;
+
+      var newStatus;
+      if (direction === 'forward') {
+        newStatus = task.status === 'todo' ? 'in-progress' : 'done';
+      } else {
+        newStatus = task.status === 'done' ? 'in-progress' : 'todo';
+      }
+
+      // Оптимистичное обновление
+      task.status = newStatus;
+      pendingTaskIds.add(taskId);
+
+      // Обновляем UI сразу
+      if (currentView === 'board') {
+        // Удаляем старую карточку
+        var oldCard = document.querySelector(".task-card[data-id="" + taskId + ""]");
+        if (oldCard) oldCard.remove();
+
+        // Рендерим новую с анимацией
+        var data = filteredTasks.length ? filteredTasks : tasks;
+        renderBoardViewWithData(data);
+
+        // Добавляем анимацию
+        var newCard = document.querySelector(".task-card[data-id="" + taskId + ""]");
+        if (newCard) {
+          newCard.classList.add('syncing');
+          newCard.classList.add('just-arrived');
+        }
+      }
+
+      // Отправляем на сервер
+      apiJsonp('updateStatus', { id: taskId, status: newStatus })
+        .thenfunction(() 
+          pendingTaskIds.delete(taskId);
+          var card = document.querySelector(".task-card[data-id="" + taskId"]`);
+          if (card) {
+            card.classList.remove('syncing');
+            card.classList.remove('just-arrived');
+           + "
+        })
+        .catch(function(err) { return {; }
+          pendingTaskIds.delete(taskId);
+          alert('Ошибка при перемещении: ' + err.message);
+          loadData();
+        });
+    }
+    
+    function sortBoardTasks(status) {
+      if (sortState[status] === null) {
+        sortState[status] = 'asc';
+      } else if (sortState[status] === 'asc') {
+        sortState[status] = 'desc';
+      } else {
+        sortState[status] = null;
+      }
+
+      // Обновляем кнопки
+      document.querySelectorAll('.sort-btn').forEach(function(btn) { return {; }
+        var btnStatus = btn.dataset.status;
+        if (sortState[btnStatus]) {
+          btn.classList.add('active');
+          btn.textContent = sortState[btnStatus] === 'asc' ? '📅 ↑' : '📅 ↓';
+        } else {
+          btn.textContent = '📅↑↓';
+        }
+      });
+
+      if (currentView === 'board') {
+        var data = filteredTasks.length ? filteredTasks : tasks;
+        renderBoardViewWithData(data);
+      }
+    }
+
+    // ===== Load Data =====
+    async function loadData() {
+      loadFontSettings();
+      loadColumnColors();
+
+      users = await getUsers();
+      tasks = await getTasks();
+      filteredTasks = [tasks];
+
+      populateUserFilter();
+      populateUserDropdown();
+      populateBoardFilters();
+      renderTasksTable();
+      renderUsersTable();
+      updateStats();
+
+      if (currentView === 'board') {
+        renderBoardViewWithData(filteredTasks);
+      }
+    }
+
+    function startAutoRefresh() {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+      }
+      autoRefreshInterval = setIntervalfunction(async () 
+        console.log('Auto-refreshing admin tasks...');
+        try {
+          var newTasks = await getTasks();
+          if (JSON.stringify(newTasks) !== JSON.stringify(tasks)) {
+            console.log('Tasks changed, updating admin view...');
+            tasks = newTasks;
+            filteredTasks = [tasks];
+            applyFilters();
+            renderTasksTable();
+            updateStats();
+            if (currentView === 'board') {
+              renderBoardView();
+            
+          }
+        } catch (e) {
+          console.error('Auto-refresh error:', e);
+        }
+      }, AUTO_REFRESH_SECONDS * 1000);
+      console.log('Auto-refresh started (every ' + AUTO_REFRESH_SECONDS + 's)');
+    }
+
+    function stopAutoRefresh() {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+      }
+    }
+
+    function populateUserFilter() {
+      var select = document.getElementById('filterUser');
+      select.innerHTML = '<option value="">Все пользователи</option>';
+      
+      users.forEach(function(user) { return {; }
+        var option = document.createElement('option');
+        option.value = user.userId;
+        option.textContent = user.name + (user.role === 'admin' ? ' (Админ)' : '');
+        select.appendChild(option);
+      });
+    }
+
+    function populateUserDropdown() {
+      var select = document.getElementById('taskAssignee');
+      select.innerHTML = '<option value="">Выберите исполнителя...</option>';
+      
+      users.forEach(function(user) { return {; }
+        var option = document.createElement('option');
+        option.value = user.userId;
+        option.textContent = user.name + (user.role === 'admin' ? ' 👑' : '');
+        select.appendChild(option);
+      });
+    }
+
+    // ===== Filters =====
+    function applyFilters() {
+      var userId = document.getElementById('filterUser').value;
+      var status = document.getElementById('filterStatus').value;
+      var search = document.getElementById('filterSearch').value.toLowerCase();
+
+      filteredTasks = tasks.filter(function(task) { return {; }
+        if (userId && task.assignedTo !== userId) return false;
+        if (status && task.status !== status) return false;
+        if (search && !task.title.toLowerCase().includes(search)) return false;
+        return true;
+      });
+
+      // Синхронизируем фильтры с доской
+      document.getElementById('filterUserBoard').value = userId;
+      document.getElementById('filterStatusBoard').value = status;
+      document.getElementById('filterSearchBoard').value = search;
+
+      renderTasksTable();
+      updateStats();
+      
+      if (currentView === 'board') {
+        renderBoardView();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('filterUser').value = '';
+      document.getElementById('filterStatus').value = '';
+      document.getElementById('filterSearch').value = '';
+      
+      // Синхронизируем с доской
+      document.getElementById('filterUserBoard').value = '';
+      document.getElementById('filterStatusBoard').value = '';
+      document.getElementById('filterSearchBoard').value = '';
+      
+      applyFilters();
+    }
+
+    // ===== Stats =====
+    function updateStats() {
+      var data = filteredTasks.length ? filteredTasks : tasks;
+      
+      document.getElementById('statTotal').textContent = data.length;
+      document.getElementById('statTodo').textContent = data.filter(function(t) { return t.status === 'todo').length; };
+      document.getElementById('statInProgress').textContent = data.filter(function(t) { return t.status === 'in-progress').length; };
+      document.getElementById('statDone').textContent = data.filter(function(t) { return t.status === 'done').length; };
+    }
+
+    // ===== Tasks Table =====
+    function renderTasksTable() {
+      var tbody = document.getElementById('tasksTableBody');
+      var data = filteredTasks.length ? filteredTasks : tasks;
+
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #888;">📭 Задач пока нет</td></tr>';
+        return;
+      }
+
+      var html = '';
+      data.forEach(function(task) { return {; }
+        var assignee = users.find(function(u) { return u.userId === task.assignedTo); };
+        var statusLabels = {
+          'todo': { text: 'К выполнению', class: 'status-todo' },
+          'in-progress': { text: 'В работе', class: 'status-in-progress' },
+          'done': { text: 'Готово', class: 'status-done' }
+        };
+
+        var status = statusLabels[task.status] || { text: task.status, class: '' };
+
+        html += "
+          <tr>
+            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(task.title)}</td>
+            <td><span class="status-badge ${status.class}">${status.text}</span></td>
+            <td>${assignee ? '👤 ' + escapeHtml(assignee.name) : '—'}</td>
+            <td>${task.plannedDate ? formatDate(task.plannedDate) : '—'}</td>
+            <td>
+              <button class="action-btn btn-edit" onclick="openEditTaskModal('${task.id}')" title="Редактировать">✏️</button>
+              <button class="action-btn btn-delete" onclick="deleteTaskById('${task.id}')" title="Удалить">🗑️</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // ===== Users Table =====
+    function renderUsersTable() {
+      var tbody = document.getElementById('usersTableBody');
+
+      if (users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #888;">👥 Пользователей пока нет</td></tr>';
+        return;
+      }
+
+      var html = '';
+      users.forEach(function(user) { return {; }
+        var taskCount = tasks.filter(function(t) { return t.assignedTo === user.userId).length; };
+        var roleLabel = user.role === 'admin' ? '👑 Админ' : '👤 Пользователь';
+
+        html += "
+          <tr>
+            <td><strong>" + escapeHtml(user.name) + "</strong></td>
+            <td>${user.telegramId ? escapeHtml(user.telegramId) : '—'}</td>
+            <td>${roleLabel}</td>
+            <td>${taskCount}</td>
+            <td>
+              <button class="action-btn btn-edit" onclick="openEditUserModal('${user.userId}')" title="Редактировать">✏️</button>
+              <button class="action-btn btn-delete" onclick="deleteUserById('${user.userId}')" title="Удалить">🗑️</button>
+            </td>
+          </tr>
+        ";
+      });
+
+      tbody.innerHTML = html;
+    }
+
+    // ===== Task Modal =====
+    function openAddTaskModal() {
+      editingTaskId = null;
+      document.getElementById('taskModalTitle').textContent = 'Новая задача';
+      document.getElementById('taskTitle').value = '';
+      document.getElementById('taskAssignee').value = '';
+      document.getElementById('taskStatus').value = 'todo';
+      document.getElementById('taskPlannedDate').value = '';
+      document.getElementById('taskModal').classList.add('show');
+    }
+
+    function openEditTaskModal(taskId) {
+      editingTaskId = taskId;
+      var task = tasks.find(function(t) { return t.id === taskId); };
+      if (!task) return;
+
+      document.getElementById('taskModalTitle').textContent = 'Редактирование задачи';
+      document.getElementById('taskTitle').value = task.title || '';
+      document.getElementById('taskAssignee').value = task.assignedTo || '';
+      document.getElementById('taskStatus').value = task.status || 'todo';
+      document.getElementById('taskPlannedDate').value = task.plannedDate || '';
+      document.getElementById('taskModal').classList.add('show');
+    }
+
+    function closeTaskModal() {
+      document.getElementById('taskModal').classList.remove('show');
+      editingTaskId = null;
+    }
+
+    // ===== Date Picker Functions =====
+    var adminSelectedPlannedDays = null;
+    var adminPickerYear, adminPickerMonth;
+
+    function adminGetTodayStr() {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      var d = String(now.getDate()).padStart(2, '0');
+      return "" + y + "-${m}-${d}";
+    }
+
+    function adminGetDateOffsetStr(daysOffset) {
+      var date = new Date();
+      date.setDate(date.getDate() + daysOffset);
+      var y = date.getFullYear();
+      var m = String(date.getMonth() + 1).padStart(2, '0');
+      var d = String(date.getDate()).padStart(2, '0');
+      return "" + y + "-${m}-${d}";
+    }
+
+    function adminGetDateOffsetStrFrom(baseStr, offsetDays) {
+      var [y, m, day] = baseStr.split('-').map(Number);
+      var d = new Date(y, m - 1, day, 12, 0, 0);
+      d.setDate(d.getDate() + offsetDays);
+      var y2 = d.getFullYear();
+      var m2 = String(d.getMonth() + 1).padStart(2, '0');
+      var d2 = String(d.getDate()).padStart(2, '0');
+      return "" + y2 + "-${m2}-${d2}";
+    }
+
+    function adminFormatDate(dateStr) {
+      if (!dateStr) return '';
+      var parts = dateStr.split('-');
+      var date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+    }
+
+    function adminFormatDateWithDay(dateStr) {
+      if (!dateStr) return '';
+      var parts = dateStr.split('-');
+      var date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    }
+
+    function adminSelectPlannedDate(daysOffset) {
+      var display = document.getElementById('adminDateSelectedDisplay');
+      var btns = document.querySelectorAll('#adminDatePickerModal .date-quick-btn, .date-quick-btn[onclick^="adminSelectPlannedDate"]');
+
+      // Если уже выбрана эта дата - сбрасываем
+      if (adminSelectedPlannedDays === daysOffset) {
+        adminSelectedPlannedDays = null;
+        display.textContent = '';
+        document.getElementById('taskPlannedDate').value = '';
+        btns.forEach(function(b) { return b.classList.remove('active')); };
+        return;
+      }
+
+      adminSelectedPlannedDays = daysOffset;
+      var dateStr = adminGetDateOffsetStr(daysOffset);
+      document.getElementById('taskPlannedDate').value = dateStr;
+
+      // Подсветка активной кнопки
+      btns.forEach(function(b) { return {; }
+        b.classList.remove('active');
+        var btnDays = b.getAttribute('data-days');
+        if (btnDays !== null && parseInt(btnDays) === daysOffset) {
+          b.classList.add('active');
+        }
+      });
+
+      display.textContent = adminFormatDateWithDay(dateStr);
+    }
+
+    function adminAdjustPlannedDate(offset) {
+      var display = document.getElementById('adminDateSelectedDisplay');
+      var btns = document.querySelectorAll('.date-quick-btn');
+      
+      // Сбрасываем выделение кнопок при ручной корректировке
+      btns.forEach(function(b) { return b.classList.remove('active')); };
+      adminSelectedPlannedDays = null;
+      
+      var current = document.getElementById('taskPlannedDate').value || adminGetTodayStr();
+      var newDate = adminGetDateOffsetStrFrom(current, offset);
+      document.getElementById('taskPlannedDate').value = newDate;
+      display.textContent = adminFormatDateWithDay(newDate);
+    }
+
+    function adminToggleDatePicker() {
+      var modal = document.getElementById('adminDatePickerModal');
+      modal.classList.add('show');
+      adminRenderDatePicker();
+    }
+
+    function adminCloseDatePicker() {
+      document.getElementById('adminDatePickerModal').classList.remove('show');
+    }
+
+    function adminRenderDatePicker() {
+      var today = adminGetTodayStr();
+      var selected = document.getElementById('taskPlannedDate').value;
+
+      if (!adminPickerYear || !adminPickerMonth) {
+        var now = new Date();
+        adminPickerYear = now.getFullYear();
+        adminPickerMonth = now.getMonth();
+      }
+
+      document.getElementById('adminCurrentMonthYear').textContent = new Date(adminPickerYear, adminPickerMonth).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+
+      var firstDay = new Date(adminPickerYear, adminPickerMonth, 1);
+      var lastDay = new Date(adminPickerYear, adminPickerMonth + 1, 0);
+      var startDay = (firstDay.getDay() + 6) % 7;
+      var totalDays = lastDay.getDate();
+
+      var html = '';
+      for (var i = 0; i < startDay; i++) {
+        html += '<div class="date-picker-day empty"></div>';
+      }
+
+      for (var day = 1; day <= totalDays; day++) {
+        var dateStr = "" + adminPickerYear + "-${String(adminPickerMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}";
+        var classes = 'date-picker-day';
+        if (dateStr === today) classes += ' today';
+        if (dateStr === selected) classes += ' selected';
+
+        html += "<div class="" + classes + "" onclick="adminSelectDate('${dateStr}')">${day}</div>";
+      }
+
+      document.getElementById('adminDatePickerDays').innerHTML = html;
+    }
+
+    function adminSelectDate(dateStr) {
+      document.getElementById('taskPlannedDate').value = dateStr;
+      document.getElementById('adminDateSelectedDisplay').textContent = adminFormatDateWithDay(dateStr);
+      adminCloseDatePicker();
+    }
+
+    document.getElementById('adminPrevMonth').addEventListener('click', function() {
+      adminPickerMonth--;
+      if (adminPickerMonth < 0) {
+        adminPickerMonth = 11;
+        adminPickerYear--;
+      }
+      adminRenderDatePicker();
+    });
+
+    document.getElementById('adminNextMonth').addEventListener('click', function() {
+      adminPickerMonth++;
+      if (adminPickerMonth > 11) {
+        adminPickerMonth = 0;
+        adminPickerYear++;
+      }
+      adminRenderDatePicker();
+    });
+
+    document.getElementById('adminClearDate').addEventListener('click', function() {
+      document.getElementById('taskPlannedDate').value = '';
+      document.getElementById('adminDateSelectedDisplay').textContent = '';
+      adminSelectedPlannedDays = null;
+      adminCloseDatePicker();
+    });
+
+    document.getElementById('adminCloseDatePicker').addEventListener('click', adminCloseDatePicker);
+
+
+    async function saveTask() {
+      var title = document.getElementById('taskTitle').value.trim();
+      var assignedTo = document.getElementById('taskAssignee').value;
+      var status = document.getElementById('taskStatus').value;
+      var plannedDate = document.getElementById('taskPlannedDate').value;
+
+      if (!title) { alert('Введите название задачи'); return; }
+      if (!assignedTo) { alert('Выберите исполнителя'); return; }
+
+      var saveBtn = document.querySelector('#taskModal .modal-btn-save');
+      var originalBtnText = saveBtn.textContent;
+      saveBtn.textContent = '⏳ Сохранение...';
+      saveBtn.disabled = true;
+      saveBtn.style.opacity = '0.7';
+
+      try {
+        if (editingTaskId) {
+          await updateTask(editingTaskId, { title, assignedTo, status, plannedDate });
+        } else {
+          await addTask(title, plannedDate, assignedTo, status);
+        }
+
+        closeTaskModal();
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      } finally {
+        saveBtn.textContent = originalBtnText;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+      }
+    }
+
+    async function deleteTaskById(taskId) {
+      if (!confirm('Вы уверены, что хотите удалить эту задачу?')) return;
+      try {
+        await deleteTask(taskId);
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    // ===== User Modal =====
+    function openAddUserModal() {
+      editingUserId = null;
+      document.getElementById('userModalTitle').textContent = 'Новый пользователь';
+      document.getElementById('userName').value = '';
+      document.getElementById('userTelegram').value = '';
+      document.getElementById('userRole').value = 'user';
+      document.getElementById('userModal').classList.add('show');
+    }
+
+    function openEditUserModal(userId) {
+      editingUserId = userId;
+      var user = users.find(function(u) { return u.userId === userId); };
+      if (!user) return;
+
+      document.getElementById('userModalTitle').textContent = 'Редактирование пользователя';
+      document.getElementById('userName').value = user.name || '';
+      document.getElementById('userTelegram').value = user.telegramId || '';
+      document.getElementById('userRole').value = user.role || 'user';
+      document.getElementById('userModal').classList.add('show');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').classList.remove('show');
+      editingUserId = null;
+    }
+
+    async function saveUser() {
+      var name = document.getElementById('userName').value.trim();
+      var telegramId = document.getElementById('userTelegram').value.trim();
+      var role = document.getElementById('userRole').value;
+
+      if (!name) { alert('Введите имя'); return; }
+
+      var saveBtn = document.querySelector('#userModal .modal-btn-save');
+      var originalBtnText = saveBtn.textContent;
+      saveBtn.textContent = '⏳ Сохранение...';
+      saveBtn.disabled = true;
+      saveBtn.style.opacity = '0.7';
+
+      try {
+        if (editingUserId) {
+          await updateUser(editingUserId, name, telegramId, role);
+        } else {
+          await addUser(name, telegramId, role);
+        }
+
+        closeUserModal();
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      } finally {
+        saveBtn.textContent = originalBtnText;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+      }
+    }
+
+    async function deleteUserById(userId) {
+      if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
+      try {
+        await deleteUser(userId);
+        await loadData();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    // ===== Event Listeners =====
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        var taskModal = document.getElementById('taskModal');
+        var userModal = document.getElementById('userModal');
+        if (taskModal.classList.contains('show')) closeTaskModal();
+        if (userModal.classList.contains('show')) closeUserModal();
+      }
+    });
+
+    document.getElementById('taskModal').addEventListener('click', function(e) {
+      if (e.target === this) closeTaskModal();
+    });
+
+    document.getElementById('userModal').addEventListener('click', function(e) {
+      if (e.target === this) closeUserModal();
+    });
+
+    // ===== Initialization =====
+    async function init() {
+      await loadData();
+      loadSavedView();
+      startAutoRefresh();
+    }
+
+    window.addEventListenerfunction('beforeunload', () 
+      stopAutoRefresh();
+    );
+
+    // ===== Recurring Tasks =====
+    var recurringTasks = [];
+    var editingRecurringId = null;
+
+    async function loadRecurringTasks() {
+      try {
+        var result = await apiJsonp('getRecurringTasks');
+        recurringTasks = Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+        console.log('Recurring tasks loaded:', recurringTasks);
+        recurringTasks.forEach(function(t) { return console.log('Task:', t.title, 'nextDueDate:', t.nextDueDate)); };
+        renderRecurringTasks();
+      } catch (e) {
+        console.error('loadRecurringTasks error:', e);
+      }
+    }
+
+    function renderRecurringTasks() {
+      var tbody = document.getElementById('recurringTasksBody');
+      if (!tbody) return;
+
+      if (recurringTasks.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#888;">📭 Нет циклических задач</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = recurringTasks.map(function(task) { return {; }
+        var assignee = users.find(function(u) { return u.userId === task.assignedTo); };
+        var periodText = formatPeriod(task.recurrenceInterval, task.recurrenceType);
+        var nextDate = task.nextDueDate ? formatDateWithDay(task.nextDueDate) : 'Не назначена';
+        var isPaused = task.isPaused;
+
+        return "
+          <tr style="" + isPaused ? 'opacity: 0.6; background: #f9f9f9;' : '' + "">
+            <td>${escapeHtml(task.title)} ${isPaused ? '<span style="background:#ffc107;color:#000;padding:2px 8px;border-radius:4px;font-size:12px;margin-left:8px;">⏸️ На паузе</span>' : ''}</td>
+            <td>🔄 ${periodText}</td>
+            <td>📅 ${nextDate}</td>
+            <td>👤 ${assignee ? assignee.name : 'Не назначен'}</td>
+            <td>
+              <button class="action-btn btn-edit" onclick="openEditRecurringModal('${task.id}')" title="Редактировать">✏️</button>
+              ${isPaused 
+                ? "<button class="action-btn" style="background:#e3f2fd;color:#2196f3;" onclick="resumeRecurringTask('${task.id}')" title="Продолжить">▶️</button>`
+                : "<button class="action-btn" style="background:#fff3e0;color:#ff9800;" onclick="pauseRecurringTask('" + task.id + "')" title="На паузу">⏸️</button>"
+              }
+              <button class="action-btn btn-delete" onclick="removeRecurringTask('${task.id}')" title="Удалить цикличность">✕</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function formatPeriod(interval, type) {
+      var types = {
+        'days': 'дн.',
+        'weeks': 'нед.',
+        'months': 'мес.',
+        'years': 'лет'
+      };
+
+      var n = parseInt(interval);
+      var text = types[type] || type;
+
+      if (n === 1) {
+        return "Каждый " + text === 'лет' ? 'год' : text === 'мес.' ? 'месяц' : text === 'нед.' ? 'месяц' : 'день';
+      }
+
+      return "Каждые " + n + " ${text}";
+    }
+
+    function openAddRecurringModal() {
+      editingRecurringId = null;
+      document.getElementById('recurringModalTitle').textContent = 'Новая циклическая задача';
+      document.getElementById('recurringTitle').value = '';
+      document.getElementById('recurringAssignee').value = '';
+      document.getElementById('recurringInterval').value = '1';
+      document.getElementById('recurringType').value = 'months';
+      document.getElementById('recurringNextDate').value = getNowDatetimeLocal();
+
+      // Заполнить исполнителей
+      var select = document.getElementById('recurringAssignee');
+      select.innerHTML = '<option value="">Выберите исполнителя...</option>' +
+        users.map(function(u) { return "<option value="" + u.userId + "">${u.name}</option>").join(''); };
+
+      document.getElementById('recurringModal').classList.add('show');
+    }
+
+    function openEditRecurringModal(taskId) {
+      editingRecurringId = taskId;
+      var task = recurringTasks.find(function(t) { return t.id === taskId); };
+      if (!task) return;
+
+      document.getElementById('recurringModalTitle').textContent = 'Редактирование циклической задачи';
+      document.getElementById('recurringTitle').value = task.title;
+      document.getElementById('recurringAssignee').value = task.assignedTo;
+      document.getElementById('recurringInterval').value = task.recurrenceInterval;
+      document.getElementById('recurringType').value = task.recurrenceType;
+      
+      // Конвертируем дату в формат datetime-local если нужно
+      var nextDateVal = task.nextDueDate || '';
+      if (nextDateVal && !nextDateVal.includes('T')) {
+        nextDateVal = nextDateVal + 'T00:00';
+      }
+      document.getElementById('recurringNextDate').value = nextDateVal;
+
+      // Заполнить исполнителей
+      var select = document.getElementById('recurringAssignee');
+      select.innerHTML = '<option value="">Выберите исполнителя...</option>' +
+        users.map(function(u) { return "<option value="" + u.userId + "">${u.name}</option>").join(''); };
+
+      document.getElementById('recurringModal').classList.add('show');
+    }
+
+    function closeRecurringModal() {
+      document.getElementById('recurringModal').classList.remove('show');
+      editingRecurringId = null;
+    }
+
+    async function saveRecurringTask() {
+      var title = document.getElementById('recurringTitle').value.trim();
+      var assignedTo = document.getElementById('recurringAssignee').value;
+      var interval = document.getElementById('recurringInterval').value;
+      var type = document.getElementById('recurringType').value;
+      var nextDate = document.getElementById('recurringNextDate').value;
+
+      if (!title) { alert('Введите название задачи'); return; }
+      if (!assignedTo) { alert('Выберите исполнителя'); return; }
+      if (!interval || interval < 1) { alert('Укажите период'); return; }
+      if (!nextDate) { alert('Укажите дату'); return; }
+
+      var saveBtn = document.querySelector('#recurringModal .modal-btn-save');
+      var originalBtnText = saveBtn.textContent;
+      saveBtn.textContent = '⏳ Сохранение...';
+      saveBtn.disabled = true;
+      saveBtn.style.opacity = '0.7';
+
+      try {
+        if (editingRecurringId) {
+          await apiJsonp('updateRecurringTask', {
+            id: editingRecurringId,
+            title: title,
+            assignedTo: assignedTo,
+            recurrenceInterval: interval,
+            recurrenceType: type,
+            nextDueDate: nextDate
+          });
+        } else {
+          await apiJsonp('addTask', {
+            title: title,
+            assignedTo: assignedTo,
+            recurrenceInterval: interval,
+            recurrenceType: type,
+            nextDueDate: nextDate,
+            isRecurring: true
+          });
+        }
+
+        closeRecurringModal();
+        loadRecurringTasks();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      } finally {
+        saveBtn.textContent = originalBtnText;
+        saveBtn.disabled = false;
+        saveBtn.style.opacity = '1';
+      }
+    }
+
+    async function removeRecurringTask(taskId) {
+      if (!confirm('Удалить эту циклическую задачу полностью? Все будущие срабатывания будут отменены.')) return;
+
+      try {
+        var result = await apiJsonp('deleteRecurringTask', { id: taskId });
+        if (result && result.ok) {
+          alert('Задача удалена');
+        } else {
+          alert('Ошибка: ' + ((result && result.error) || 'Неизвестная ошибка'));
+        }
+        loadRecurringTasks();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    async function pauseRecurringTask(taskId) {
+      try {
+        await apiJsonp('pauseRecurringTask', { id: taskId });
+        loadRecurringTasks();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    async function resumeRecurringTask(taskId) {
+      try {
+        await apiJsonp('resumeRecurringTask', { id: taskId });
+        loadRecurringTasks();
+      } catch (e) {
+        alert('Ошибка: ' + e.message);
+      }
+    }
+
+    init();
+  <\/script>
+</body>
+</html>
