@@ -809,6 +809,12 @@
   <script>
 "use strict";
 
+window.onerror = function(msg, url, line, col, error) {
+  console.log('Error: ' + msg + ' at line ' + line);
+  return true;
+};
+
+try {
 if (!Array.prototype.find) {
   Array.prototype.find = function(callback, thisArg) {
     for (var i = 0; i < this.length; i++) {
@@ -2362,6 +2368,9 @@ function _init() {
   return _init.apply(this, arguments);
 }
 init();
+} catch(e) {
+  console.log('Script error: ' + e.message);
+}
 </script>
 </body>
 </html>
