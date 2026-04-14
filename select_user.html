@@ -469,31 +469,31 @@
 
     // ===== GOOGLE SHEETS API =====
     function apiJsonp(action, params = {}) {
-      return new Promisefunction((resolve, reject) 
+      return new Promise(function(resolve, reject) {
         var callbackName = 'jsonp_callback_' + Date.now();
-        var urlParams = "mode=jsonp&action=" + encodeURIComponent(action)&callback=${callbackName;
+        var urlParams = "mode=jsonp&action=" + encodeURIComponent(action) + "&callback=" + callbackName;
         for (var key in params) {
           if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-            urlParams += "&" + encodeURIComponent(key) + "=${encodeURIComponent(params[key])}";
+            urlParams += "&" + encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
           }
         }
-        var url = "" + API_URL + "?${urlParams}";
+        var url = API_URL + "?" + urlParams;
 
         var script = document.createElement('script');
         script.src = url;
-        script.onerror = function() 
+        script.onerror = function() {
           setSyncStatus('error', '❌ Ошибка сети');
           reject(new Error('JSONP request failed'));
-        ;
+        };
 
-        window[callbackName] = function(response) 
+        window[callbackName] = function(response) {
           if (response && response.ok) {
             setSyncStatus('ready', '✅ Синхронизировано');
-            setTimeoutfunction(() { return setSyncStatus('ready', ''), 3000); };
+            setTimeout(function() { return setSyncStatus('ready', ''); }, 3000);
             resolve(response.data || response);
-           else {
-            setSyncStatus('error', '❌ Ошибка: ' + ((response && response.error) || 'Неизвестная'));
-            reject(new Error((response && response.error) || 'API error'));
+          } else {
+            setSyncStatus('error', '❌ Ошибка: ' + (response.error || 'Неизвестная'));
+            reject(new Error(response.error || 'API error'));
           }
           delete window[callbackName];
           document.body.removeChild(script);
@@ -503,10 +503,9 @@
       });
     }
 
-    async function apiCall(action, payload = {}) {
+    function apiCall(action, payload) {
       setSyncStatus('syncing', '🔄 Синхронизация...');
-      try {
-        return await apiJsonp(action, payload);
+      return apiJsonp(action, payload);
       } catch (e) {
         setSyncStatus('error', '❌ Ошибка сети');
         console.error('API call error:', e);
@@ -520,7 +519,7 @@
         var result = await apiJsonp('getUsers');
         var users = Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
         setSyncStatus('ready', '✅ Загружено');
-        setTimeoutfunction(() { return setSyncStatus('ready', ''), 2000); };
+        setTimeout(function() { return setSyncStatus('ready', ''); }, 2000);
         return users;
       } catch (e) {
         setSyncStatus('error', '❌ Ошибка загрузки');
@@ -621,33 +620,19 @@
         users = [];
       }
 
-      if (users.length === 0) {
-        container.innerHTML = `
-          <div class="loading">
-            <p>Пользователей пока нет</p>
-            <p style="margin-top: 8px; font-size: 13px; color: #888;">
-              Нажмите "Добавить пользователя" чтобы создать первого
-            </p>
-          </div>
-        `;
+if (users.length === 0) {
+        container.innerHTML = '<div class="loading"><p>Пользователей пока нет</p><p style="margin-top: 8px; font-size: 13px; color: #888;">Нажмите "Добавить пользователя" чтобы создать первого</p></div>';
         return;
       }
 
       var html = '<div class="user-list">';
 
-      users.forEach(function(user) { return {; }
+      users.forEach(function(user) {
         var avatarLetter = user.name.charAt(0).toUpperCase();
         var roleLabel = user.role === 'admin' ? '👑 Админ' : '👤 Пользователь';
         var isSelected = user.userId === selectedUserId ? 'selected' : '';
 
-        html += "
-          <div class="user-card " + isSelected + "" data-user-id="${user.userId}" onclick="selectUser('${user.userId}')" ontouchstart="handleTouchStart(event, '${user.userId}')" ontouchend="handleTouchEnd(event, '${user.userId}')">
-            <div class="user-avatar">${avatarLetter}</div>
-            <div class="user-info">
-              <div class="user-name">${escapeHtml(user.name)}</div>
-              <div class="user-role">${roleLabel}${user.telegramId ? ' • ' + escapeHtml(user.telegramId) : ''}</div>
-            </div>
-            <div class="user-actions">
+        html += '<div class="user-card ' + isSelected + '" data-user-id="' + user.userId + '" onclick="selectUser(\'' + user.userId + '\')" ontouchstart="handleTouchStart(event, \'' + user.userId + '\')" ontouchend="handleTouchEnd(event, \'' + user.userId + '\')"><div class="user-avatar">' + avatarLetter + '</div><div class="user-info"><div class="user-name">' + escapeHtml(user.name) + '</div><div class="user-role">' + roleLabel + (user.telegramId ? ' • ' + escapeHtml(user.telegramId) : '') + '</div></div><div class="user-actions">
               <button class="user-action-btn btn-edit" onclick="event.stopPropagation(); openEditUserModal('${user.userId}')" title="Редактировать">✏️</button>
               ${user.role !== 'admin' || users.filter(function(u) { return u.role === 'admin').length > 1 ?; }
                 "<button class="user-action-btn btn-delete" onclick="event.stopPropagation(); confirmDeleteUser('${user.userId}')" title="Удалить">🗑️</button>` :
