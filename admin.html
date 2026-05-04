@@ -2,51 +2,65 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
   <meta name="theme-color" content="#667eea" />
   <title>Kanban v2 - Локальная Админка</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { -webkit-box-sizing: border-box; box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       padding: 20px;
     }
     .container { max-width: 1200px; margin: 0 auto; }
-    
+
     .header {
       background: white;
       border-radius: 16px;
       padding: 20px 24px;
       margin-bottom: 20px;
+      display: -webkit-flex;
       display: flex;
+      -webkit-justify-content: space-between;
       justify-content: space-between;
+      -webkit-align-items: center;
       align-items: center;
+      -webkit-flex-wrap: wrap;
       flex-wrap: wrap;
-      gap: 16px;
+      -webkit-box-shadow: 0 10px 40px rgba(0,0,0,0.2);
       box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      /* gap: 16px replaced */
+      margin: 0 -8px 20px -8px;
+      padding: 12px 16px;
     }
+    .header > * { margin: 8px; }
 
     .header-controls {
+      display: -webkit-flex;
       display: flex;
-      gap: 12px;
+      -webkit-align-items: center;
       align-items: center;
+      -webkit-flex-wrap: wrap;
       flex-wrap: wrap;
+      margin: -6px;
     }
+    .header-controls > * { margin: 6px; }
 
     .header h1 {
       font-size: 24px;
       color: #333;
     }
-    
+
     .view-toggle {
+      display: -webkit-flex;
       display: flex;
       background: #f5f7fa;
       border-radius: 10px;
       padding: 4px;
     }
-    
+
     .view-toggle button {
       padding: 10px 16px;
       border: none;
@@ -54,16 +68,20 @@
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
+      -webkit-transition: all 0.2s;
       transition: all 0.2s;
       background: transparent;
       color: #666;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    
+
     .view-toggle button.active {
+      background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
-    
+
     .btn {
       padding: 10px 16px;
       border-radius: 10px;
@@ -71,14 +89,22 @@
       font-weight: 600;
       cursor: pointer;
       border: none;
+      -webkit-transition: all 0.2s;
       transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      display: inline-block;
+      text-decoration: none;
+      text-align: center;
+      min-height: 44px;
     }
-    
+
     .btn-primary {
+      background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
-    
+
     .btn-secondary {
       background: #f5f7fa;
       color: #666;
@@ -93,30 +119,31 @@
       background: #e8f5e9;
       color: #2e7d32;
     }
-    
+
     /* Settings */
     .settings-container {
       position: relative;
     }
-    
+
     .settings-btn {
-      background: rgba(255,255,255,0.2);
-      border: 1px solid rgba(255,255,255,0.3);
+      background: transparent;
+      border: 2px solid #e1e5eb;
       border-radius: 12px;
       padding: 8px 12px;
       cursor: pointer;
       font-size: 16px;
+      display: -webkit-flex;
       display: flex;
+      -webkit-align-items: center;
       align-items: center;
-      gap: 4px;
-      color: white;
+      color: #333;
+      -webkit-transition: all 0.3s;
       transition: all 0.3s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-height: 44px;
     }
-    
-    .settings-btn:hover {
-      background: rgba(255,255,255,0.3);
-    }
-    
+
     .settings-dropdown {
       display: none;
       position: absolute;
@@ -125,31 +152,34 @@
       margin-top: 8px;
       background: white;
       border-radius: 12px;
+      -webkit-box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       box-shadow: 0 8px 32px rgba(0,0,0,0.2);
       padding: 16px;
       z-index: 1000;
       min-width: 220px;
       border: 1px solid #e1e5eb;
     }
-    
+
     .settings-dropdown.show {
       display: block;
     }
-    
+
     .settings-dropdown h3 {
       font-size: 14px;
       color: #333;
       margin-bottom: 12px;
       font-weight: 600;
     }
-    
+
     .font-size-control {
+      display: -webkit-flex;
       display: flex;
+      -webkit-align-items: center;
       align-items: center;
-      gap: 8px;
       margin-bottom: 12px;
     }
-    
+    .font-size-control > * + * { margin-left: 8px; }
+
     .font-size-control button {
       padding: 6px 10px;
       border: 2px solid #667eea;
@@ -159,15 +189,14 @@
       font-size: 14px;
       font-weight: bold;
       cursor: pointer;
+      -webkit-transition: all 0.2s;
       transition: all 0.2s;
-      min-width: 32px;
+      min-width: 36px;
+      min-height: 36px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    
-    .font-size-control button:hover {
-      background: #667eea;
-      color: white;
-    }
-    
+
     .font-size-value {
       font-size: 13px;
       color: #333;
@@ -175,7 +204,7 @@
       text-align: center;
       font-weight: 500;
     }
-    
+
     .bold-btn {
       width: 100%;
       padding: 8px;
@@ -186,20 +215,18 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      -webkit-transition: all 0.2s;
       transition: all 0.2s;
       margin-bottom: 10px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    
-    .bold-btn:hover {
-      background: #667eea;
-      color: white;
-    }
-    
+
     .bold-btn.active {
       background: #667eea;
       color: white;
     }
-    
+
     .reset-btn {
       width: 100%;
       padding: 8px;
@@ -210,28 +237,30 @@
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
+      -webkit-transition: all 0.2s;
       transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    
-    .reset-btn:hover {
-      background: #dc3545;
-      color: white;
-    }
-    
+
     .color-settings {
+      display: -webkit-flex;
       display: flex;
+      -webkit-flex-direction: column;
       flex-direction: column;
-      gap: 8px;
       margin-top: 8px;
     }
-    
+    .color-settings > * + * { margin-top: 8px; }
+
     .color-row {
+      display: -webkit-flex;
       display: flex;
+      -webkit-align-items: center;
       align-items: center;
-      gap: 8px;
       font-size: 13px;
     }
-    
+    .color-row > * + * { margin-left: 8px; }
+
     .color-row input[type="color"] {
       width: 32px;
       height: 32px;
@@ -240,32 +269,33 @@
       cursor: pointer;
       padding: 0;
     }
-    
+
     .card {
       background: white;
       border-radius: 16px;
       padding: 24px;
       margin-bottom: 20px;
+      -webkit-box-shadow: 0 10px 40px rgba(0,0,0,0.2);
       box-shadow: 0 10px 40px rgba(0,0,0,0.2);
     }
-    
+
     .card h2 {
       font-size: 18px;
       color: #333;
       margin-bottom: 16px;
     }
-    
+
     table {
       width: 100%;
       border-collapse: collapse;
     }
-    
+
     th, td {
       padding: 12px 16px;
       text-align: left;
       border-bottom: 1px solid #e1e5eb;
     }
-    
+
     th {
       font-size: 12px;
       font-weight: 600;
@@ -273,11 +303,9 @@
       text-transform: uppercase;
       background: #f5f7fa;
     }
-    
-    tr:hover {
-      background: #f9fafb;
-    }
-    
+
+    tr:active { background: #f9fafb; }
+
     .status-badge {
       display: inline-block;
       padding: 4px 10px;
@@ -285,30 +313,32 @@
       font-size: 12px;
       font-weight: 600;
     }
-    
+
     .status-todo { background: #fff3e0; color: #f57c00; }
     .status-in-progress { background: #e3f2fd; color: #1976d2; }
     .status-done { background: #e8f5e9; color: #2e7d32; }
-    
+
     .action-btn {
-      width: 32px;
-      height: 32px;
+      width: 44px;
+      height: 44px;
       border-radius: 8px;
       border: none;
       cursor: pointer;
-      display: flex;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-align-items: center;
       align-items: center;
+      -webkit-justify-content: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 16px;
       margin-right: 4px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    
+
     .btn-edit { background: #e3f2fd; color: #1976d2; }
-    .btn-edit:hover { background: #1976d2; color: white; }
-    
     .btn-delete { background: #ffebee; color: #c62828; }
-    .btn-delete:hover { background: #c62828; color: white; }
-    
+
     /* Modal */
     .modal-overlay {
       display: none;
@@ -316,39 +346,48 @@
       top: 0; left: 0; right: 0; bottom: 0;
       background: rgba(0,0,0,0.5);
       z-index: 1000;
+      -webkit-align-items: center;
       align-items: center;
+      -webkit-justify-content: center;
       justify-content: center;
       padding: 20px;
+      -webkit-overflow-scrolling: touch;
     }
-    
-    .modal-overlay.show { display: flex; }
-    
+
+    .modal-overlay.show {
+      display: -webkit-flex;
+      display: flex;
+    }
+
     .modal-content {
       background: white;
       border-radius: 20px;
       padding: 32px;
       width: 100%;
       max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    
+
     .modal-title {
       font-size: 20px;
       font-weight: 600;
       margin-bottom: 24px;
       text-align: center;
     }
-    
+
     .form-group {
       margin-bottom: 16px;
     }
-    
+
     .form-group label {
       display: block;
       font-size: 14px;
       color: #666;
       margin-bottom: 8px;
     }
-    
+
     .form-group input,
     .form-group select,
     .form-group textarea {
@@ -358,20 +397,24 @@
       border-radius: 10px;
       font-size: 15px;
       font-family: inherit;
+      -webkit-appearance: none;
+      background: white;
     }
-    
+
     .form-group textarea {
       resize: vertical;
       min-height: 100px;
     }
-    
+
     .modal-buttons {
+      display: -webkit-flex;
       display: flex;
-      gap: 12px;
       margin-top: 24px;
     }
-    
+    .modal-buttons > * + * { margin-left: 12px; }
+
     .modal-btn {
+      -webkit-flex: 1;
       flex: 1;
       padding: 14px;
       border: none;
@@ -379,14 +422,18 @@
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-height: 48px;
     }
-    
+
     .modal-btn-cancel {
       background: #f5f7fa;
       color: #666;
     }
-    
+
     .modal-btn-save {
+      background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
@@ -404,26 +451,28 @@
     }
 
     .date-quick-btns {
+      display: -webkit-flex;
       display: flex;
+      -webkit-flex-wrap: wrap;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 10px;
+      margin: -3px;
+      margin-bottom: 7px;
     }
 
     .date-quick-btn {
-      padding: 8px 12px;
+      margin: 3px;
+      padding: 10px 12px;
       border: 2px solid #e1e5eb;
       border-radius: 8px;
       background: white;
       color: #333;
       font-size: 13px;
       cursor: pointer;
+      -webkit-transition: all 0.2s;
       transition: all 0.2s;
-    }
-
-    .date-quick-btn:hover {
-      border-color: #667eea;
-      background: #f5f7fa;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-height: 40px;
     }
 
     .date-quick-btn.active {
@@ -440,6 +489,7 @@
       background: #f5f7fa;
       border-radius: 8px;
       text-align: center;
+      min-height: 36px;
     }
 
     .date-picker-modal {
@@ -450,11 +500,14 @@
       right: 0;
       bottom: 0;
       z-index: 10001;
+      -webkit-justify-content: center;
       justify-content: center;
+      -webkit-align-items: center;
       align-items: center;
     }
 
     .date-picker-modal.show {
+      display: -webkit-flex;
       display: flex;
     }
 
@@ -472,18 +525,28 @@
       background: white;
       border-radius: 16px;
       padding: 20px;
+      -webkit-box-shadow: 0 12px 48px rgba(0,0,0,0.2);
       box-shadow: 0 12px 48px rgba(0,0,0,0.2);
+      -webkit-animation: slideUp 0.3s ease;
       animation: slideUp 0.3s ease;
+      min-width: 320px;
     }
 
+    @-webkit-keyframes slideUp {
+      from { -webkit-transform: translateY(30px); transform: translateY(30px); opacity: 0; }
+      to { -webkit-transform: translateY(0); transform: translateY(0); opacity: 1; }
+    }
     @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
+      from { -webkit-transform: translateY(30px); transform: translateY(30px); opacity: 0; }
+      to { -webkit-transform: translateY(0); transform: translateY(0); opacity: 1; }
     }
 
     .date-picker-header {
+      display: -webkit-flex;
       display: flex;
+      -webkit-justify-content: space-between;
       justify-content: space-between;
+      -webkit-align-items: center;
       align-items: center;
       margin-bottom: 15px;
     }
@@ -492,20 +555,30 @@
       background: #f5f7fa;
       border: 1px solid #e1e5eb;
       border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       font-size: 18px;
       cursor: pointer;
       color: #333;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
-    #currentMonthYear {
+    #adminCurrentMonthYear {
       font-size: 18px;
       font-weight: 600;
     }
 
     .date-picker-weekdays {
+      display: -webkit-grid;
       display: grid;
+      -webkit-grid-template-columns: repeat(7, 1fr);
       grid-template-columns: repeat(7, 1fr);
       text-align: center;
       margin-bottom: 10px;
@@ -518,26 +591,36 @@
     }
 
     .date-picker-days {
+      display: -webkit-grid;
       display: grid;
+      -webkit-grid-template-columns: repeat(7, 1fr);
       grid-template-columns: repeat(7, 1fr);
       gap: 4px;
       margin-bottom: 15px;
     }
 
+    /* aspect-ratio removed — replaced with fixed height */
     .date-picker-day {
-      padding: 10px;
+      height: 36px;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      padding: 0;
       text-align: center;
       border-radius: 8px;
       cursor: pointer;
       font-size: 14px;
-      transition: all 0.2s;
-    }
-
-    .date-picker-day:hover {
-      background: #f5f7fa;
+      -webkit-transition: background 0.15s;
+      transition: background 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .date-picker-day.selected {
+      background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
@@ -551,18 +634,23 @@
     }
 
     .date-picker-actions {
+      display: -webkit-flex;
       display: flex;
-      gap: 10px;
     }
+    .date-picker-actions > * + * { margin-left: 10px; }
 
     .date-picker-clear,
     .date-picker-close {
+      -webkit-flex: 1;
       flex: 1;
       padding: 10px;
       border: none;
       border-radius: 8px;
       font-size: 14px;
       cursor: pointer;
+      min-height: 44px;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     .date-picker-clear {
@@ -571,27 +659,35 @@
     }
 
     .date-picker-close {
+      background: -webkit-linear-gradient(315deg, #667eea 0%, #764ba2 100%);
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: white;
     }
 
     .filters {
+      display: -webkit-flex;
       display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
+      -webkit-flex-wrap: wrap;
       flex-wrap: wrap;
+      margin-bottom: 16px;
+      margin: -6px 0 10px -6px;
     }
-    
+    .filters > * { margin: 6px; }
+
     .filters select,
     .filters input {
       padding: 10px 14px;
       border: 2px solid #e1e5eb;
       border-radius: 10px;
       font-size: 14px;
+      -webkit-appearance: none;
+      background: white;
     }
-    
+
     .stats {
+      display: -webkit-grid;
       display: grid;
+      -webkit-grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 12px;
       margin-bottom: 16px;
@@ -601,6 +697,7 @@
       background: white;
       border-radius: 12px;
       padding: 12px 16px;
+      -webkit-box-shadow: 0 4px 20px rgba(0,0,0,0.1);
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
 
@@ -621,24 +718,26 @@
       display: none;
       margin-bottom: 20px;
     }
-    
+
     #boardView.active {
       display: block;
     }
-    
+
     .board-grid {
+      display: -webkit-grid;
       display: grid;
+      -webkit-grid-template-columns: repeat(3, minmax(0, 1fr));
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 16px;
     }
-    
+
     .column {
       background: #dee3ea;
       border-radius: 12px;
       padding: 16px;
       min-height: 400px;
     }
-    
+
     .column-header {
       font-weight: 600;
       font-size: 16px;
@@ -647,11 +746,14 @@
       margin-bottom: 16px;
       border-radius: 8px;
       background: #f5f7fa;
+      display: -webkit-flex;
       display: flex;
+      -webkit-justify-content: space-between;
       justify-content: space-between;
+      -webkit-align-items: center;
       align-items: center;
     }
-    
+
     .sort-btn {
       background: #90a4ae;
       color: white;
@@ -660,18 +762,15 @@
       padding: 4px 8px;
       font-size: 11px;
       cursor: pointer;
+      -webkit-transition: background 0.2s;
       transition: background 0.2s;
       white-space: nowrap;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    
-    .sort-btn:hover {
-      background: #78909c;
-    }
-    
-    .sort-btn.active {
-      background: #667eea;
-    }
-    
+
+    .sort-btn.active { background: #667eea; }
+
     .task-count {
       background: rgba(0,0,0,0.1);
       border-radius: 10px;
@@ -679,76 +778,84 @@
       font-size: 14px;
       margin-left: 8px;
     }
-    
+
     .task-list {
+      display: -webkit-flex;
       display: flex;
+      -webkit-flex-direction: column;
       flex-direction: column;
-      gap: 12px;
     }
-    
+    .task-list > * + * { margin-top: 12px; }
+
     .task-card {
       background: white;
       border-radius: 10px;
       padding: 16px;
+      -webkit-box-shadow: 0 2px 6px rgba(0,0,0,0.08);
       box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-      cursor: grab;
+      cursor: pointer;
+      -webkit-transition: -webkit-transform 0.2s, -webkit-box-shadow 0.2s, opacity 0.2s;
       transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
       border-left: 4px solid #667eea;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .task-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    /* Animations */
+    @-webkit-keyframes cardArrive {
+      0% { opacity: 0; -webkit-transform: translateY(-18px) scale(0.96); transform: translateY(-18px) scale(0.96); }
+      60% { opacity: 1; -webkit-transform: translateY(4px) scale(1.01); transform: translateY(4px) scale(1.01); }
+      100% { opacity: 1; -webkit-transform: translateY(0) scale(1); transform: translateY(0) scale(1); }
     }
-
-    /* Анимации */
     @keyframes cardArrive {
-      0% { opacity: 0; transform: translateY(-18px) scale(0.96); }
-      60% { opacity: 1; transform: translateY(4px) scale(1.01); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
+      0% { opacity: 0; -webkit-transform: translateY(-18px) scale(0.96); transform: translateY(-18px) scale(0.96); }
+      60% { opacity: 1; -webkit-transform: translateY(4px) scale(1.01); transform: translateY(4px) scale(1.01); }
+      100% { opacity: 1; -webkit-transform: translateY(0) scale(1); transform: translateY(0) scale(1); }
     }
 
     .task-card.just-arrived {
-      animation: cardArrive 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      -webkit-animation: cardArrive 0.35s ease forwards;
+      animation: cardArrive 0.35s ease forwards;
     }
 
+    @-webkit-keyframes syncPulse {
+      0%, 100% { -webkit-box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0 rgba(74,144,217,0.7); box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0 rgba(74,144,217,0.7); }
+      50% { -webkit-box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 12px rgba(74,144,217,0); box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 12px rgba(74,144,217,0); }
+    }
     @keyframes syncPulse {
-      0%, 100% { box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0 rgba(74,144,217,0.7); }
-      50% { box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 12px rgba(74,144,217,0); }
+      0%, 100% { -webkit-box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0 rgba(74,144,217,0.7); box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 0 rgba(74,144,217,0.7); }
+      50% { -webkit-box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 12px rgba(74,144,217,0); box-shadow: 0 2px 6px rgba(0,0,0,0.08), 0 0 0 12px rgba(74,144,217,0); }
     }
 
-    .task-card.syncing { animation: syncPulse 1.2s ease-in-out infinite; }
+    .task-card.syncing {
+      -webkit-animation: syncPulse 1.2s ease-in-out infinite;
+      animation: syncPulse 1.2s ease-in-out infinite;
+    }
 
     .task-card.todo { border-left-color: #ff9800; }
     .task-card.in-progress { border-left-color: #2196f3; }
     .task-card.done { border-left-color: #4caf50; }
-    
-    /* Приоритетная подсветка */
+
     .task-card.planned-active {
+      background: -webkit-linear-gradient(315deg, #fff3cd 0%, #fff9e6 100%);
       background: linear-gradient(135deg, #fff3cd 0%, #fff9e6 100%);
       border-left: 4px solid #ffc107 !important;
     }
-    
+
     .task-card.planned-overdue {
+      background: -webkit-linear-gradient(315deg, #ffdddd 0%, #ffe6e6 100%);
       background: linear-gradient(135deg, #ffdddd 0%, #ffe6e6 100%);
       border-left: 4px solid #dc3545 !important;
     }
-    
+
     .task-card.planned-tomorrow {
+      background: -webkit-linear-gradient(315deg, #fff3cd 0%, #fff9e6 100%);
       background: linear-gradient(135deg, #fff3cd 0%, #fff9e6 100%);
       border-left: 4px solid #ffc107 !important;
     }
-    
-    .task-planned-today {
-      font-weight: 700 !important;
-      color: #c62828 !important;
-    }
-    
-    .task-planned-overdue {
-      font-weight: 600 !important;
-      color: #e65100 !important;
-    }
-    
+
+    .task-planned-today { font-weight: 700 !important; color: #c62828 !important; }
+    .task-planned-overdue2 { font-weight: 600 !important; color: #e65100 !important; }
+
     .task-title {
       font-size: var(--task-title-font-size, 15px);
       font-weight: var(--task-title-font-weight, normal);
@@ -770,7 +877,7 @@
       color: #667eea;
       margin-bottom: 8px;
     }
-    
+
     .task-assignee {
       font-size: 12px;
       color: #666;
@@ -780,56 +887,53 @@
       display: inline-block;
       margin-bottom: 8px;
     }
-    
+
     .task-actions {
+      display: -webkit-flex;
       display: flex;
-      gap: 8px;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
       margin-top: 12px;
+      margin: 8px -3px 0 -3px;
     }
-    
+
     .task-actions button {
-      flex: 1;
-      padding: 8px 12px;
+      margin: 3px;
+      padding: 8px 10px;
       border: none;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 500;
       cursor: pointer;
       background: #667eea;
       color: white;
-      transition: all 0.2s;
-    }
-    
-    .task-actions button:hover {
-      filter: brightness(1.1);
-      transform: scale(1.02);
-    }
-    
-    .table-view {
-      display: block;
+      -webkit-transition: opacity 0.2s;
+      transition: opacity 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-height: 40px;
     }
 
-    .table-view.hidden {
-      display: none;
-    }
+    .task-actions button:active { opacity: 0.8; }
 
-    /* Recurring Tasks View */
-    .recurring-view {
-      display: none;
-    }
+    .table-view { display: block; }
+    .table-view.hidden { display: none; }
 
-    .recurring-view:not(.hidden) {
-      display: block;
-    }
+    .recurring-view { display: none; }
+    .recurring-view:not(.hidden) { display: block; }
 
     .recurring-header {
+      display: -webkit-flex;
       display: flex;
+      -webkit-justify-content: space-between;
       justify-content: space-between;
+      -webkit-align-items: center;
       align-items: center;
       margin-bottom: 20px;
+      -webkit-flex-wrap: wrap;
       flex-wrap: wrap;
-      gap: 12px;
     }
+    .recurring-header > * + * { margin-left: 12px; }
 
     .recurring-table-wrapper {
       overflow-x: auto;
@@ -859,10 +963,6 @@
       color: #555;
     }
 
-    .recurring-table tr:hover {
-      background: #f9fafb;
-    }
-
     .recurring-table .action-btn {
       padding: 6px 10px;
       border: none;
@@ -870,120 +970,41 @@
       cursor: pointer;
       font-size: 14px;
       margin-right: 6px;
+      -webkit-transition: all 0.2s;
       transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      min-height: 40px;
+      min-width: 40px;
     }
 
-    .recurring-table .btn-edit {
-      background: #f5f7fa;
-      color: #667eea;
-    }
-
-    .recurring-table .btn-delete {
-      background: #fee;
-      color: #dc3545;
-    }
-
-    .recurring-table .action-btn:hover {
-      transform: scale(1.05);
-    }
+    .recurring-table .btn-edit { background: #f5f7fa; color: #667eea; }
+    .recurring-table .btn-delete { background: #fee; color: #dc3545; }
 
     /* Mobile Responsiveness */
     @media (max-width: 768px) {
-      /* Header wraps vertically */
-      .header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .header h1 {
-        margin-bottom: 12px;
-      }
-
-      .header-controls {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-
-      /* Board becomes single column */
-      .board-grid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-      }
-
-      .column {
-        min-height: 300px;
-      }
-
-      /* Recurring table scrolls horizontally */
-      .recurring-header {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .recurring-header h2 {
-        font-size: 18px;
-      }
-
-      .recurring-table th,
-      .recurring-table td {
-        padding: 10px 12px;
-        font-size: 14px;
-      }
-
-      /* Table scrolls horizontally */
-      .table-view {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      table {
-        min-width: 800px;
-      }
-
-      /* Smaller fonts and buttons */
-      .btn {
-        padding: 8px 12px;
-        font-size: 14px;
-      }
-
-      .settings-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 18px;
-      }
-
-      .task-card {
-        padding: 12px;
-      }
-
-      .task-title {
-        font-size: 14px;
-      }
-
-      .task-actions button {
-        padding: 6px 10px;
-        font-size: 12px;
-      }
+      .header { -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: stretch; align-items: stretch; }
+      .header h1 { margin-bottom: 12px; }
+      .header-controls { -webkit-justify-content: center; justify-content: center; }
+      .board-grid { -webkit-grid-template-columns: 1fr; grid-template-columns: 1fr; gap: 12px; }
+      .column { min-height: 300px; }
+      .recurring-header { -webkit-flex-direction: column; flex-direction: column; -webkit-align-items: stretch; align-items: stretch; }
+      .recurring-header > * + * { margin-left: 0; margin-top: 12px; }
+      .recurring-header h2 { font-size: 18px; }
+      .recurring-table th, .recurring-table td { padding: 10px 12px; font-size: 14px; }
+      .table-view { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+      table { min-width: 600px; }
+      .btn { padding: 8px 12px; font-size: 14px; }
+      .task-card { padding: 12px; }
+      .task-title { font-size: 14px; }
+      .task-actions button { padding: 8px 10px; font-size: 12px; }
     }
 
-    /* Extra small devices */
     @media (max-width: 480px) {
-      .header h1 {
-        font-size: 20px;
-      }
-
-      .column {
-        padding: 12px;
-      }
-
-      .column-header {
-        font-size: 14px;
-        padding: 10px 12px;
-      }
-
-      .task-card {
-        padding: 10px;
-      }
+      .header h1 { font-size: 20px; }
+      .column { padding: 12px; }
+      .column-header { font-size: 14px; padding: 10px 12px; }
+      .task-card { padding: 10px; }
     }
   </style>
 </head>
@@ -991,14 +1012,14 @@
   <div class="container">
     <!-- Header -->
     <div class="header">
-      <h1>🔧 Админская панель</h1>
-      <div class="header-controls" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+      <h1>&#128295; Админская панель</h1>
+      <div class="header-controls">
         <div class="settings-container">
-          <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">⚙️</button>
+          <button class="settings-btn" id="settingsBtn" onclick="toggleSettings()">&#9881;&#65039;</button>
           <div class="settings-dropdown" id="settingsDropdown">
             <h3>Заголовок задач</h3>
             <div class="font-size-control">
-              <button onclick="changeFontSize('title', -2)">−</button>
+              <button onclick="changeFontSize('title', -2)">&#8722;</button>
               <span class="font-size-value" id="fontSizeValueTitle">15px</span>
               <button onclick="changeFontSize('title', 2)">+</button>
             </div>
@@ -1006,7 +1027,7 @@
 
             <h3 style="margin-top: 12px;">Даты и длительность</h3>
             <div class="font-size-control">
-              <button onclick="changeFontSize('meta', -2)">−</button>
+              <button onclick="changeFontSize('meta', -2)">&#8722;</button>
               <span class="font-size-value" id="fontSizeValueMeta">12px</span>
               <button onclick="changeFontSize('meta', 2)">+</button>
             </div>
@@ -1014,7 +1035,7 @@
 
             <h3 style="margin-top: 12px;">Плановая дата</h3>
             <div class="font-size-control">
-              <button onclick="changeFontSize('planned', -2)">−</button>
+              <button onclick="changeFontSize('planned', -2)">&#8722;</button>
               <span class="font-size-value" id="fontSizeValuePlanned">12px</span>
               <button onclick="changeFontSize('planned', 2)">+</button>
             </div>
@@ -1025,17 +1046,17 @@
             <h3 style="margin-top: 16px;">Цвета столбцов</h3>
             <div class="color-settings">
               <div class="color-row">
-                <span>📝 Задания:</span>
+                <span>&#128221; Задания:</span>
                 <input type="color" id="todoHeaderColor" value="#fff3e0" onchange="updateColumnColors()">
                 <input type="color" id="todoBgColor" value="#fff8e1" onchange="updateColumnColors()">
               </div>
               <div class="color-row">
-                <span>🔄 В работе:</span>
+                <span>&#128260; В работе:</span>
                 <input type="color" id="inProgressHeaderColor" value="#e3f2fd" onchange="updateColumnColors()">
                 <input type="color" id="inProgressBgColor" value="#e3f2fd" onchange="updateColumnColors()">
               </div>
               <div class="color-row">
-                <span>✅ Готово:</span>
+                <span>&#9989; Готово:</span>
                 <input type="color" id="doneHeaderColor" value="#e8f5e9" onchange="updateColumnColors()">
                 <input type="color" id="doneBgColor" value="#e8f5e9" onchange="updateColumnColors()">
               </div>
@@ -1043,12 +1064,12 @@
           </div>
         </div>
         <div class="view-toggle">
-          <button id="viewTableBtn" class="active" onclick="setView('table')">📊 Таблица</button>
-          <button id="viewBoardBtn" onclick="setView('board')">📋 Доска</button>
-          <button id="viewRecurringBtn" onclick="setView('recurring')">🔄 Циклические</button>
+          <button id="viewTableBtn" class="active" onclick="setView('table')">Таблица</button>
+          <button id="viewBoardBtn" onclick="setView('board')">Доска</button>
+          <button id="viewRecurringBtn" onclick="setView('recurring')">Циклические</button>
         </div>
-        <a href="select_user.html" class="btn btn-secondary">👤 Выбор пользователя</a>
-        <button class="btn btn-primary" onclick="openAddTaskModal()">➕ Добавить задачу</button>
+        <a href="select_user.html" class="btn btn-secondary">&#128100; Пользователи</a>
+        <button class="btn btn-primary" onclick="openAddTaskModal()">&#10133; Добавить задачу</button>
       </div>
     </div>
 
@@ -1076,10 +1097,9 @@
     <div id="recurringView" class="recurring-view hidden">
       <div class="card">
         <div class="recurring-header">
-          <h2>🔄 Циклические задачи</h2>
-          <button class="btn btn-primary" onclick="openAddRecurringModal()">➕ Добавить циклическую</button>
+          <h2>&#128260; Циклические задачи</h2>
+          <button class="btn btn-primary" onclick="openAddRecurringModal()">&#10133; Добавить циклическую</button>
         </div>
-        
         <div class="recurring-table-wrapper">
           <table class="recurring-table">
             <thead>
@@ -1092,7 +1112,7 @@
               </tr>
             </thead>
             <tbody id="recurringTasksBody">
-              <tr><td colspan="5" style="text-align:center;padding:40px;color:#888;">📭 Нет циклических задач</td></tr>
+              <tr><td colspan="5" style="text-align:center;padding:40px;color:#888;">Нет циклических задач</td></tr>
             </tbody>
           </table>
         </div>
@@ -1101,42 +1121,39 @@
 
     <!-- Kanban Board View -->
     <div id="boardView">
-      <!-- Filters Bar -->
       <div class="card" style="margin-bottom: 16px; padding: 16px 20px;">
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <select id="filterUserBoard" onchange="applyFiltersBoard()" style="padding: 10px 14px; border: 2px solid #e1e5eb; border-radius: 10px; font-size: 14px; min-width: 180px; background: white;">
-            <option value="">👤 Все пользователи</option>
-          </select>
-          <select id="filterStatusBoard" onchange="applyFiltersBoard()" style="padding: 10px 14px; border: 2px solid #e1e5eb; border-radius: 10px; font-size: 14px; min-width: 150px; background: white;">
-            <option value="">📊 Все статусы</option>
+        <div style="display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-webkit-align-items:center;align-items:center;margin:-6px;">
+          <select id="filterUserBoard" onchange="applyFiltersBoard()" style="margin:6px;padding:10px 14px;border:2px solid #e1e5eb;border-radius:10px;font-size:14px;min-width:180px;background:white;-webkit-appearance:none;"></select>
+          <select id="filterStatusBoard" onchange="applyFiltersBoard()" style="margin:6px;padding:10px 14px;border:2px solid #e1e5eb;border-radius:10px;font-size:14px;min-width:150px;background:white;-webkit-appearance:none;">
+            <option value="">Все статусы</option>
             <option value="todo">К выполнению</option>
             <option value="in-progress">В работе</option>
             <option value="done">Готово</option>
           </select>
-          <input type="text" id="filterSearchBoard" placeholder="🔍 Поиск..." oninput="applyFiltersBoard()" style="padding: 10px 14px; border: 2px solid #e1e5eb; border-radius: 10px; font-size: 14px; flex: 1; min-width: 200px; background: white;" />
-          <button class="btn btn-secondary" onclick="resetFiltersBoard()" style="padding: 10px 16px; white-space: nowrap;">🔄 Сбросить</button>
+          <input type="text" id="filterSearchBoard" placeholder="Поиск..." oninput="applyFiltersBoard()" style="margin:6px;padding:10px 14px;border:2px solid #e1e5eb;border-radius:10px;font-size:14px;-webkit-flex:1;flex:1;min-width:160px;background:white;" />
+          <button class="btn btn-secondary" onclick="resetFiltersBoard()" style="margin:6px;padding:10px 16px;white-space:nowrap;">Сбросить</button>
         </div>
       </div>
-      
+
       <div class="board-grid">
         <div class="column todo" data-status="todo">
           <div class="column-header">
-            <span>📝 Задания<span class="task-count" id="boardCountTodo">0</span></span>
-            <button class="sort-btn" data-status="todo" onclick="sortBoardTasks('todo')">📅↑↓</button>
+            <span>&#128221; Задания<span class="task-count" id="boardCountTodo">0</span></span>
+            <button class="sort-btn" data-status="todo" onclick="sortBoardTasks('todo')">Дата&#8593;&#8595;</button>
           </div>
           <div class="task-list" id="boardTodoTasks"></div>
         </div>
         <div class="column in-progress" data-status="in-progress">
           <div class="column-header">
-            <span>🔄 В работе<span class="task-count" id="boardCountInProgress">0</span></span>
-            <button class="sort-btn" data-status="in-progress" onclick="sortBoardTasks('in-progress')">📅↑↓</button>
+            <span>&#128260; В работе<span class="task-count" id="boardCountInProgress">0</span></span>
+            <button class="sort-btn" data-status="in-progress" onclick="sortBoardTasks('in-progress')">Дата&#8593;&#8595;</button>
           </div>
           <div class="task-list" id="boardInProgressTasks"></div>
         </div>
         <div class="column done" data-status="done">
           <div class="column-header">
-            <span>✅ Готово<span class="task-count" id="boardCountDone">0</span></span>
-            <button class="sort-btn" data-status="done" onclick="sortBoardTasks('done')">📅↑↓</button>
+            <span>&#9989; Готово<span class="task-count" id="boardCountDone">0</span></span>
+            <button class="sort-btn" data-status="done" onclick="sortBoardTasks('done')">Дата&#8593;&#8595;</button>
           </div>
           <div class="task-list" id="boardDoneTasks"></div>
         </div>
@@ -1145,21 +1162,19 @@
 
     <!-- Tasks Table -->
     <div class="card table-view" id="tableView">
-      <h2>📋 Все задачи</h2>
-      
+      <h2>&#128203; Все задачи</h2>
       <div class="filters">
-        <select id="filterUser" onchange="applyFilters()">
+        <select id="filterUser" onchange="applyFilters()" style="-webkit-appearance:none;background:white;">
           <option value="">Все пользователи</option>
         </select>
-        <select id="filterStatus" onchange="applyFilters()">
+        <select id="filterStatus" onchange="applyFilters()" style="-webkit-appearance:none;background:white;">
           <option value="">Все статусы</option>
           <option value="todo">К выполнению</option>
           <option value="in-progress">В работе</option>
           <option value="done">Готово</option>
         </select>
-        <input type="text" id="filterSearch" placeholder="🔍 Поиск..." oninput="applyFilters()" />
+        <input type="text" id="filterSearch" placeholder="Поиск..." oninput="applyFilters()" style="background:white;" />
       </div>
-      
       <table>
         <thead>
           <tr>
@@ -1176,8 +1191,8 @@
 
     <!-- Users -->
     <div class="card">
-      <h2>👤 Пользователи</h2>
-      <button class="btn btn-primary" onclick="openAddUserModal()" style="margin-bottom: 16px;">➕ Добавить пользователя</button>
+      <h2>&#128100; Пользователи</h2>
+      <button class="btn btn-primary" onclick="openAddUserModal()" style="margin-bottom: 16px;">&#10133; Добавить пользователя</button>
       <table>
         <thead>
           <tr>
@@ -1197,44 +1212,38 @@
   <div class="modal-overlay" id="taskModal">
     <div class="modal-content">
       <div class="modal-title" id="taskModalTitle">Новая задача</div>
-      
       <div class="form-group">
         <label for="taskTitle">Название задачи *</label>
         <textarea id="taskTitle" placeholder="Введите описание задачи..."></textarea>
       </div>
-      
       <div class="form-group">
-        <label for="taskAssignee">👤 Исполнитель *</label>
+        <label for="taskAssignee">&#128100; Исполнитель *</label>
         <select id="taskAssignee">
           <option value="">Выберите исполнителя...</option>
         </select>
       </div>
-      
       <div class="form-group">
-        <label for="taskStatus">📊 Статус</label>
+        <label for="taskStatus">Статус</label>
         <select id="taskStatus">
           <option value="todo">К выполнению</option>
           <option value="in-progress">В работе</option>
           <option value="done">Готово</option>
         </select>
       </div>
-      
       <div class="form-group">
-        <label for="taskPlannedDate">📅 Плановая дата</label>
+        <label>&#128197; Плановая дата</label>
         <div class="date-picker-section">
-          <div class="date-picker-label">📅 Запланировать на:</div>
           <div class="date-quick-btns">
             <button class="date-quick-btn" data-days="0" onclick="adminSelectPlannedDate(0)">Сегодня</button>
             <button class="date-quick-btn" data-days="1" onclick="adminSelectPlannedDate(1)">Завтра</button>
-            <button class="date-quick-btn" data-adjust="-1" onclick="adminAdjustPlannedDate(-1)">−1 день</button>
-            <button class="date-quick-btn" data-adjust="1" onclick="adminAdjustPlannedDate(1)">+1 день</button>
-            <button class="date-quick-btn" onclick="adminToggleDatePicker()">📅 Календарь</button>
+            <button class="date-quick-btn" onclick="adminAdjustPlannedDate(-1)">&#8722;1 день</button>
+            <button class="date-quick-btn" onclick="adminAdjustPlannedDate(1)">+1 день</button>
+            <button class="date-quick-btn" onclick="adminToggleDatePicker()">&#128197; Календарь</button>
           </div>
           <div class="date-selected-display" id="adminDateSelectedDisplay"></div>
           <input type="date" id="taskPlannedDate" style="display:none;" />
         </div>
       </div>
-
       <div class="modal-buttons">
         <button class="modal-btn modal-btn-cancel" onclick="closeTaskModal()">Отмена</button>
         <button class="modal-btn modal-btn-save" onclick="saveTask()">Сохранить</button>
@@ -1246,26 +1255,23 @@
   <div class="modal-overlay" id="recurringModal">
     <div class="modal-content">
       <div class="modal-title" id="recurringModalTitle">Новая циклическая задача</div>
-      
       <div class="form-group">
         <label for="recurringTitle">Название задачи *</label>
         <input type="text" id="recurringTitle" placeholder="Например: Показания счетчика" />
       </div>
-      
       <div class="form-group">
-        <label for="recurringAssignee">👤 Исполнитель *</label>
+        <label for="recurringAssignee">&#128100; Исполнитель *</label>
         <select id="recurringAssignee">
           <option value="">Выберите исполнителя...</option>
         </select>
       </div>
-      
       <div class="form-group">
-        <label>🔄 Период повторения *</label>
-        <div style="display:flex;gap:12px;align-items:center;">
-          <span>Каждые</span>
-          <input type="number" id="recurringInterval" min="1" max="1440" value="1" 
-               style="width:60px;padding:8px;border:2px solid #e1e5eb;border-radius:8px;" />
-          <select id="recurringType" style="flex:1;padding:8px;border:2px solid #e1e5eb;border-radius:8px;">
+        <label>Период повторения *</label>
+        <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;">
+          <span style="margin-right:8px;">Каждые</span>
+          <input type="number" id="recurringInterval" min="1" max="1440" value="1"
+               style="width:60px;padding:8px;border:2px solid #e1e5eb;border-radius:8px;margin-right:8px;-webkit-appearance:none;" />
+          <select id="recurringType" style="-webkit-flex:1;flex:1;padding:8px;border:2px solid #e1e5eb;border-radius:8px;-webkit-appearance:none;background:white;">
             <option value="minutes">минут</option>
             <option value="hours">часов</option>
             <option value="days">дней</option>
@@ -1275,12 +1281,10 @@
           </select>
         </div>
       </div>
-      
       <div class="form-group">
-        <label for="recurringNextDate">📅 Первое выполнение *</label>
+        <label for="recurringNextDate">&#128197; Первое выполнение *</label>
         <input type="datetime-local" id="recurringNextDate" />
       </div>
-      
       <div class="modal-buttons">
         <button class="modal-btn modal-btn-cancel" onclick="closeRecurringModal()">Отмена</button>
         <button class="modal-btn modal-btn-save" onclick="saveRecurringTask()">Сохранить</button>
@@ -1288,8 +1292,6 @@
     </div>
   </div>
 
-  <!-- User Modal -->
-  
   <!-- Date Picker Modal -->
   <div class="date-picker-modal" id="adminDatePickerModal">
     <div class="date-picker-overlay" onclick="adminCloseDatePicker()"></div>
@@ -1309,21 +1311,19 @@
       </div>
     </div>
   </div>
-  
+
+  <!-- User Modal -->
   <div class="modal-overlay" id="userModal">
     <div class="modal-content">
       <div class="modal-title" id="userModalTitle">Новый пользователь</div>
-      
       <div class="form-group">
         <label for="userName">Имя *</label>
-        <input type="text" id="userName" placeholder="Введите имя" />
+        <input type="text" id="userName" placeholder="Введите имя" autocomplete="off" />
       </div>
-      
       <div class="form-group">
         <label for="userTelegram">Telegram</label>
-        <input type="text" id="userTelegram" placeholder="@username" />
+        <input type="text" id="userTelegram" placeholder="@username" autocomplete="off" />
       </div>
-      
       <div class="form-group">
         <label for="userRole">Роль</label>
         <select id="userRole">
@@ -1331,7 +1331,6 @@
           <option value="admin">Админ</option>
         </select>
       </div>
-
       <div class="modal-buttons">
         <button class="modal-btn modal-btn-cancel" onclick="closeUserModal()">Отмена</button>
         <button class="modal-btn modal-btn-save" onclick="saveUser()">Сохранить</button>
@@ -1341,61 +1340,59 @@
 
   <script>
     // ===== GOOGLE SHEETS API CONFIGURATION =====
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwOmfbiY6qcoZtJJFyazXATEQKiVakQoFvRtVBwJbtGIFQUlhxFSiXlL89mI2_cxEg0/exec';
-    
-    const USERS_KEY = 'kanban_v2_users';
-    const TASKS_KEY = 'kanban_v2_tasks';
+    var API_URL = 'https://script.google.com/macros/s/AKfycbwOmfbiY6qcoZtJJFyazXATEQKiVakQoFvRtVBwJbtGIFQUlhxFSiXlL89mI2_cxEg0/exec';
 
-    // Sync status management
+    var USERS_KEY = 'kanban_v2_users';
+    var TASKS_KEY = 'kanban_v2_tasks';
+
     function setSyncStatus(status, message) {
-      // Admin page doesn't have sync status indicator in UI
       console.log('Sync:', message);
     }
 
     function getTodayStr() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      var d = String(now.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
     }
 
     function getNowDatetimeLocal() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      const h = String(now.getHours()).padStart(2, '0');
-      const min = String(now.getMinutes()).padStart(2, '0');
-      return `${y}-${m}-${d}T${h}:${min}`;
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = String(now.getMonth() + 1).padStart(2, '0');
+      var d = String(now.getDate()).padStart(2, '0');
+      var h = String(now.getHours()).padStart(2, '0');
+      var min = String(now.getMinutes()).padStart(2, '0');
+      return y + '-' + m + '-' + d + 'T' + h + ':' + min;
     }
 
     function getDateOffsetStr(daysOffset) {
-      const date = new Date();
+      var date = new Date();
       date.setDate(date.getDate() + daysOffset);
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
+      var y = date.getFullYear();
+      var m = String(date.getMonth() + 1).padStart(2, '0');
+      var d = String(date.getDate()).padStart(2, '0');
+      return y + '-' + m + '-' + d;
     }
 
     function formatDateWithDay(dateStr) {
       if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      const date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
+      var parts = dateStr.split('-');
+      var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0);
       if (isNaN(date.getTime())) return '';
       return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
     }
 
     function formatDate(dateStr) {
       if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      const date = new Date(parts[0], parts[1] - 1, parts[2]);
+      var parts = dateStr.split('-');
+      var date = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
       return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
     }
 
     function escapeHtml(text) {
-      const div = document.createElement('div');
+      var div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
     }
@@ -1409,151 +1406,142 @@
     }
 
     // ===== GOOGLE SHEETS API =====
-    function apiJsonp(action, params = {}) {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'jsonp_callback_' + Date.now();
-        let urlParams = `mode=jsonp&action=${encodeURIComponent(action)}&callback=${callbackName}`;
-        for (const key in params) {
+    function apiJsonp(action, params) {
+      params = params || {};
+      return new Promise(function(resolve, reject) {
+        var callbackName = 'jsonp_callback_' + Date.now();
+        var urlParams = 'mode=jsonp&action=' + encodeURIComponent(action) + '&callback=' + callbackName;
+        for (var key in params) {
           if (params[key] !== undefined && params[key] !== null && params[key] !== '') {
-            urlParams += `&${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`;
+            urlParams += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
           }
         }
-        const url = `${API_URL}?${urlParams}`;
+        var url = API_URL + '?' + urlParams;
 
-        const script = document.createElement('script');
+        var script = document.createElement('script');
         script.src = url;
-        script.onerror = () => reject(new Error('JSONP request failed'));
+        script.onerror = function() { reject(new Error('JSONP request failed')); };
 
-        window[callbackName] = (response) => {
+        window[callbackName] = function(response) {
           if (response && response.ok) {
             resolve(response.data || response);
           } else {
-            reject(new Error(response?.error || 'API error'));
+            // Fixed: no optional chaining for iOS 12
+            var errMsg = (response && response.error) ? response.error : 'API error';
+            reject(new Error(errMsg));
           }
           delete window[callbackName];
-          document.body.removeChild(script);
+          if (script.parentNode) { script.parentNode.removeChild(script); }
         };
 
         document.body.appendChild(script);
       });
     }
 
-    async function apiCall(action, payload = {}) {
-      try {
-        return await apiJsonp(action, payload);
-      } catch (e) {
+    function apiCall(action, payload) {
+      payload = payload || {};
+      return apiJsonp(action, payload).catch(function(e) {
         console.error('API call error:', e);
         throw e;
-      }
+      });
     }
 
-    async function getUsers() {
-      try {
-        const result = await apiJsonp('getUsers');
-        return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
-      } catch (e) {
-        console.error('getUsers error:', e);
-        return [];
-      }
-    }
-
-    async function getTasks() {
-      try {
-        const result = await apiJsonp('getTasks', {});
-        return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
-      } catch (e) {
-        console.error('getTasks error:', e);
-        return [];
-      }
-    }
-
-    async function addTask(title, plannedDate, assignedTo, status = 'todo') {
-      try {
-        const result = await apiCall('addTask', {
-          title: title,
-          plannedDate: plannedDate || '',
-          assignedTo: assignedTo
+    function getUsers() {
+      return apiJsonp('getUsers')
+        .then(function(result) {
+          return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+        })
+        .catch(function(e) {
+          console.error('getUsers error:', e);
+          return [];
         });
-        return result;
-      } catch (e) {
+    }
+
+    function getTasks() {
+      return apiJsonp('getTasks', {})
+        .then(function(result) {
+          return Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+        })
+        .catch(function(e) {
+          console.error('getTasks error:', e);
+          return [];
+        });
+    }
+
+    function addTask(title, plannedDate, assignedTo, status) {
+      return apiCall('addTask', {
+        title: title,
+        plannedDate: plannedDate || '',
+        assignedTo: assignedTo
+      }).catch(function(e) {
         console.error('addTask error:', e);
         throw e;
-      }
+      });
     }
 
-    async function updateTask(taskId, updates) {
-      try {
-        const result = await apiCall('updateTask', { id: taskId, ...updates });
-        return result;
-      } catch (e) {
-        console.error('updateTask error:', e);
-        throw e;
-      }
-    }
-
-    async function deleteTask(taskId) {
-      try {
-        const result = await apiCall('deleteTask', { id: taskId });
-        return result;
-      } catch (e) {
-        console.error('deleteTask error:', e);
-        throw e;
-      }
-    }
-
-    async function addUser(name, telegramId, role) {
-      try {
-        const result = await apiCall('addUser', {
-          name: name,
-          telegramId: telegramId || '',
-          role: role || 'user'
+    function updateTask(taskId, updates) {
+      // Fixed: no object spread — use Object.assign for iOS 10 compat
+      var payload = Object.assign({ id: taskId }, updates);
+      return apiCall('updateTask', payload)
+        .catch(function(e) {
+          console.error('updateTask error:', e);
+          throw e;
         });
-        return result;
-      } catch (e) {
+    }
+
+    function deleteTask(taskId) {
+      return apiCall('deleteTask', { id: taskId })
+        .catch(function(e) {
+          console.error('deleteTask error:', e);
+          throw e;
+        });
+    }
+
+    function addUser(name, telegramId, role) {
+      return apiCall('addUser', {
+        name: name,
+        telegramId: telegramId || '',
+        role: role || 'user'
+      }).catch(function(e) {
         console.error('addUser error:', e);
         throw e;
-      }
+      });
     }
 
-    async function updateUser(userId, name, telegramId, role) {
-      try {
-        const result = await apiCall('updateUser', {
-          userId: userId,
-          name: name,
-          telegramId: telegramId || '',
-          role: role || 'user'
-        });
-        return result;
-      } catch (e) {
+    function updateUser(userId, name, telegramId, role) {
+      return apiCall('updateUser', {
+        userId: userId,
+        name: name,
+        telegramId: telegramId || '',
+        role: role || 'user'
+      }).catch(function(e) {
         console.error('updateUser error:', e);
         throw e;
-      }
+      });
     }
 
-    async function deleteUser(userId) {
-      try {
-        const result = await apiCall('deleteUser', { userId: userId });
-        return result;
-      } catch (e) {
-        console.error('deleteUser error:', e);
-        throw e;
-      }
+    function deleteUser(userId) {
+      return apiCall('deleteUser', { userId: userId })
+        .catch(function(e) {
+          console.error('deleteUser error:', e);
+          throw e;
+        });
     }
 
     // ===== State =====
-    let tasks = [];
-    let users = [];
-    let filteredTasks = [];
-    let editingTaskId = null;
-    let editingUserId = null;
-    let currentView = 'table';
-    let sortState = { 'todo': null, 'in-progress': null, 'done': null };
-    let pendingTaskIds = new Set();
-    const AUTO_REFRESH_SECONDS = 30;
-    let autoRefreshInterval = null;
+    var tasks = [];
+    var users = [];
+    var filteredTasks = [];
+    var editingTaskId = null;
+    var editingUserId = null;
+    var currentView = 'table';
+    var sortState = { 'todo': null, 'in-progress': null, 'done': null };
+    var pendingTaskIds = new Set();
+    var AUTO_REFRESH_SECONDS = 30;
+    var autoRefreshInterval = null;
 
     // ===== Font Settings Config =====
-    const FONT_SETTINGS = {
+    var FONT_SETTINGS = {
       title: {
         storageSizeKey: 'taskTitleFontSize',
         storageBoldKey: 'taskTitleFontBold',
@@ -1591,107 +1579,73 @@
 
     // ===== Settings Functions =====
     function toggleSettings() {
-      const dropdown = document.getElementById('settingsDropdown');
+      var dropdown = document.getElementById('settingsDropdown');
       dropdown.classList.toggle('show');
     }
 
     function changeFontSize(type, delta) {
-      const cfg = FONT_SETTINGS[type];
+      var cfg = FONT_SETTINGS[type];
       if (!cfg) return;
-
-      const currentSize = parseInt(localStorage.getItem(cfg.storageSizeKey)) || cfg.defaultSize;
-      let newSize = currentSize + delta;
-      newSize = Math.max(cfg.min, Math.min(cfg.max, newSize));
+      var currentSize = parseInt(localStorage.getItem(cfg.storageSizeKey)) || cfg.defaultSize;
+      var newSize = Math.max(cfg.min, Math.min(cfg.max, currentSize + delta));
       setFontSize(type, newSize);
     }
 
     function setFontSize(type, size) {
-      const cfg = FONT_SETTINGS[type];
+      var cfg = FONT_SETTINGS[type];
       if (!cfg) return;
-
-      const root = document.documentElement;
-      root.style.setProperty(cfg.cssSizeVar, size + 'px');
+      document.documentElement.style.setProperty(cfg.cssSizeVar, size + 'px');
       localStorage.setItem(cfg.storageSizeKey, size);
-      updateFontSizeDisplay(type, size);
-    }
-
-    function updateFontSizeDisplay(type, size) {
-      const cfg = FONT_SETTINGS[type];
-      if (!cfg) return;
-
-      const valueEl = document.getElementById(cfg.valueElementId);
-      if (valueEl) {
-        valueEl.textContent = size + 'px';
-      }
+      var el = document.getElementById(cfg.valueElementId);
+      if (el) { el.textContent = size + 'px'; }
     }
 
     function resetFontSettings() {
-      Object.keys(FONT_SETTINGS).forEach(type => {
-        const cfg = FONT_SETTINGS[type];
+      Object.keys(FONT_SETTINGS).forEach(function(type) {
+        var cfg = FONT_SETTINGS[type];
         setFontSize(type, cfg.defaultSize);
         localStorage.setItem(cfg.storageBoldKey, 'false');
-        const root = document.documentElement;
-        root.style.setProperty(cfg.cssWeightVar, 'normal');
+        document.documentElement.style.setProperty(cfg.cssWeightVar, 'normal');
         updateBoldButton(type, false);
       });
     }
 
     function toggleBold(type) {
-      const cfg = FONT_SETTINGS[type];
+      var cfg = FONT_SETTINGS[type];
       if (!cfg) return;
-
-      const isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
-      const newBold = !isBold;
+      var isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
+      var newBold = !isBold;
       localStorage.setItem(cfg.storageBoldKey, newBold);
-      const root = document.documentElement;
-      root.style.setProperty(cfg.cssWeightVar, newBold ? 'bold' : 'normal');
+      document.documentElement.style.setProperty(cfg.cssWeightVar, newBold ? 'bold' : 'normal');
       updateBoldButton(type, newBold);
     }
 
     function updateBoldButton(type, isBold) {
-      const cfg = FONT_SETTINGS[type];
+      var cfg = FONT_SETTINGS[type];
       if (!cfg) return;
-
-      const btn = document.getElementById(cfg.boldButtonId);
-      if (btn) {
-        btn.classList.toggle('active', isBold);
-      }
+      var btn = document.getElementById(cfg.boldButtonId);
+      if (btn) { btn.classList.toggle('active', isBold); }
     }
 
     function loadFontSettings() {
-      Object.keys(FONT_SETTINGS).forEach(type => {
-        const cfg = FONT_SETTINGS[type];
-
-        const savedSize = localStorage.getItem(cfg.storageSizeKey);
-        const sizeToApply = savedSize ? parseInt(savedSize) : cfg.defaultSize;
-        setFontSize(type, sizeToApply);
-
-        const isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
-        const root = document.documentElement;
-        root.style.setProperty(cfg.cssWeightVar, isBold ? 'bold' : 'normal');
+      Object.keys(FONT_SETTINGS).forEach(function(type) {
+        var cfg = FONT_SETTINGS[type];
+        var savedSize = localStorage.getItem(cfg.storageSizeKey);
+        setFontSize(type, savedSize ? parseInt(savedSize) : cfg.defaultSize);
+        var isBold = localStorage.getItem(cfg.storageBoldKey) === 'true';
+        document.documentElement.style.setProperty(cfg.cssWeightVar, isBold ? 'bold' : 'normal');
         updateBoldButton(type, isBold);
       });
     }
 
     function updateColumnColors() {
-      const colors = {
-        todo: {
-          header: document.getElementById('todoHeaderColor').value,
-          bg: document.getElementById('todoBgColor').value
-        },
-        inProgress: {
-          header: document.getElementById('inProgressHeaderColor').value,
-          bg: document.getElementById('inProgressBgColor').value
-        },
-        done: {
-          header: document.getElementById('doneHeaderColor').value,
-          bg: document.getElementById('doneBgColor').value
-        }
+      var colors = {
+        todo: { header: document.getElementById('todoHeaderColor').value, bg: document.getElementById('todoBgColor').value },
+        inProgress: { header: document.getElementById('inProgressHeaderColor').value, bg: document.getElementById('inProgressBgColor').value },
+        done: { header: document.getElementById('doneHeaderColor').value, bg: document.getElementById('doneBgColor').value }
       };
-
       localStorage.setItem('columnColors', JSON.stringify(colors));
-
-      const root = document.documentElement;
+      var root = document.documentElement;
       root.style.setProperty('--bg-todo-header', colors.todo.header);
       root.style.setProperty('--bg-progress-header', colors.inProgress.header);
       root.style.setProperty('--bg-done-header', colors.done.header);
@@ -1701,9 +1655,9 @@
     }
 
     function loadColumnColors() {
-      const saved = localStorage.getItem('columnColors');
+      var saved = localStorage.getItem('columnColors');
       if (saved) {
-        const colors = JSON.parse(saved);
+        var colors = JSON.parse(saved);
         document.getElementById('todoHeaderColor').value = colors.todo.header;
         document.getElementById('todoBgColor').value = colors.todo.bg;
         document.getElementById('inProgressHeaderColor').value = colors.inProgress.header;
@@ -1714,46 +1668,38 @@
       }
     }
 
-    // Close settings when clicking outside
     document.addEventListener('click', function(e) {
-      const settingsContainer = document.querySelector('.settings-container');
-      const dropdown = document.getElementById('settingsDropdown');
-      if (settingsContainer && !settingsContainer.contains(e.target)) {
-        dropdown.classList.remove('show');
-      }
+      var sc = document.querySelector('.settings-container');
+      var dd = document.getElementById('settingsDropdown');
+      if (sc && !sc.contains(e.target)) { dd.classList.remove('show'); }
     });
 
     // ===== View Toggle =====
-    const ADMIN_VIEW_KEY = 'kanban_admin_view_mode';
+    var ADMIN_VIEW_KEY = 'kanban_admin_view_mode';
 
     function setView(view) {
       currentView = view;
       localStorage.setItem(ADMIN_VIEW_KEY, view);
 
-      const boardView = document.getElementById('boardView');
-      const tableView = document.getElementById('tableView');
-      const recurringView = document.getElementById('recurringView');
-      const viewTableBtn = document.getElementById('viewTableBtn');
-      const viewBoardBtn = document.getElementById('viewBoardBtn');
-      const viewRecurringBtn = document.getElementById('viewRecurringBtn');
+      var boardView = document.getElementById('boardView');
+      var tableView = document.getElementById('tableView');
+      var recurringView = document.getElementById('recurringView');
+      var viewTableBtn = document.getElementById('viewTableBtn');
+      var viewBoardBtn = document.getElementById('viewBoardBtn');
+      var viewRecurringBtn = document.getElementById('viewRecurringBtn');
 
-      // Скрыть все
       if (boardView) boardView.classList.remove('active');
       if (tableView) tableView.classList.add('hidden');
       if (recurringView) recurringView.classList.add('hidden');
-
-      // Убрать active у кнопок
       if (viewTableBtn) viewTableBtn.classList.remove('active');
       if (viewBoardBtn) viewBoardBtn.classList.remove('active');
       if (viewRecurringBtn) viewRecurringBtn.classList.remove('active');
 
-      // Показать выбранное
       if (view === 'board') {
         boardView.classList.add('active');
         if (viewBoardBtn) viewBoardBtn.classList.add('active');
         populateBoardFilters();
-        const data = filteredTasks.length ? filteredTasks : tasks;
-        renderBoardViewWithData(data);
+        renderBoardViewWithData(filteredTasks.length ? filteredTasks : tasks);
       } else if (view === 'recurring') {
         recurringView.classList.remove('hidden');
         if (viewRecurringBtn) viewRecurringBtn.classList.add('active');
@@ -1765,46 +1711,37 @@
     }
 
     function loadSavedView() {
-      const savedView = localStorage.getItem(ADMIN_VIEW_KEY) || 'table';
+      var savedView = localStorage.getItem(ADMIN_VIEW_KEY) || 'table';
       setView(savedView);
     }
 
     // ===== Board Filters =====
     function populateBoardFilters() {
-      const select = document.getElementById('filterUserBoard');
-      const currentValue = select.value;
-      select.innerHTML = '<option value="">👤 Все пользователи</option>';
-
-      users.forEach(user => {
-        const option = document.createElement('option');
+      var select = document.getElementById('filterUserBoard');
+      var currentValue = select.value;
+      select.innerHTML = '<option value="">&#128100; Все пользователи</option>';
+      users.forEach(function(user) {
+        var option = document.createElement('option');
         option.value = user.userId;
         option.textContent = user.name + (user.role === 'admin' ? ' (Админ)' : '');
         select.appendChild(option);
       });
-
-      // Сохраняем выбранное значение
-      if (currentValue) {
-        select.value = currentValue;
-      }
+      if (currentValue) { select.value = currentValue; }
     }
 
     function applyFiltersBoard() {
-      const userId = document.getElementById('filterUserBoard').value;
-      const status = document.getElementById('filterStatusBoard').value;
-      const search = document.getElementById('filterSearchBoard').value.toLowerCase();
-
-      filteredTasks = tasks.filter(task => {
+      var userId = document.getElementById('filterUserBoard').value;
+      var status = document.getElementById('filterStatusBoard').value;
+      var search = document.getElementById('filterSearchBoard').value.toLowerCase();
+      filteredTasks = tasks.filter(function(task) {
         if (userId && task.assignedTo !== userId) return false;
         if (status && task.status !== status) return false;
-        if (search && !task.title.toLowerCase().includes(search)) return false;
+        if (search && task.title.toLowerCase().indexOf(search) === -1) return false;
         return true;
       });
-
-      // Синхронизием фильтры с таблицей
       document.getElementById('filterUser').value = userId;
       document.getElementById('filterStatus').value = status;
       document.getElementById('filterSearch').value = search;
-
       renderBoardViewWithData(filteredTasks);
       updateStats();
     }
@@ -1813,272 +1750,226 @@
       document.getElementById('filterUserBoard').value = '';
       document.getElementById('filterStatusBoard').value = '';
       document.getElementById('filterSearchBoard').value = '';
-      
-      // Синхронизируем с таблицей
       document.getElementById('filterUser').value = '';
       document.getElementById('filterStatus').value = '';
       document.getElementById('filterSearch').value = '';
-      
       applyFiltersBoard();
     }
 
     // ===== Board View Rendering =====
+    function sortTasksByPriority(taskArr, status) {
+      if (!taskArr || taskArr.length === 0) return [];
+      var today = getTodayStr();
+      var activeGroup = taskArr.filter(function(t) { return t.plannedDate && t.plannedDate <= today; });
+      var futureGroup = taskArr.filter(function(t) { return t.plannedDate && t.plannedDate > today; });
+      var noDateGroup = taskArr.filter(function(t) { return !t.plannedDate; });
+      var overdueGroup = activeGroup.filter(function(t) { return t.plannedDate < today; });
+      var todayGroup = activeGroup.filter(function(t) { return t.plannedDate === today; });
+      overdueGroup.sort(function(a, b) { return a.plannedDate > b.plannedDate ? 1 : -1; });
+      todayGroup.sort(function(a, b) { return a.plannedDate > b.plannedDate ? 1 : -1; });
+      futureGroup.sort(function(a, b) { return a.plannedDate > b.plannedDate ? 1 : -1; });
+      if (sortState[status]) {
+        var sf = function(a, b) {
+          var da = a.startDate ? new Date(a.startDate) : new Date(0);
+          var db = b.startDate ? new Date(b.startDate) : new Date(0);
+          return sortState[status] === 'asc' ? da - db : db - da;
+        };
+        todayGroup.sort(sf); overdueGroup.sort(sf); futureGroup.sort(sf); noDateGroup.sort(sf);
+      }
+      return todayGroup.concat(overdueGroup, futureGroup, noDateGroup);
+    }
+
     function renderBoardViewWithData(data) {
+      var empty = '<div style="text-align:center;padding:40px;color:#888;">Задач нет</div>';
       if (!data || data.length === 0) {
-        // Показываем пустое состояние
-        document.getElementById('boardTodoTasks').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Задач нет</div>';
-        document.getElementById('boardInProgressTasks').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Задач нет</div>';
-        document.getElementById('boardDoneTasks').innerHTML = '<div style="text-align: center; padding: 40px; color: #888;">📭 Задач нет</div>';
+        document.getElementById('boardTodoTasks').innerHTML = empty;
+        document.getElementById('boardInProgressTasks').innerHTML = empty;
+        document.getElementById('boardDoneTasks').innerHTML = empty;
         document.getElementById('boardCountTodo').textContent = '0';
         document.getElementById('boardCountInProgress').textContent = '0';
         document.getElementById('boardCountDone').textContent = '0';
         return;
       }
-
-      const todoTasks = data.filter(t => t.status === 'todo');
-      const inProgressTasks = data.filter(t => t.status === 'in-progress');
-      const doneTasks = data.filter(t => t.status === 'done');
-
-      // Сортировка с приоритетами дат
-      const today = getTodayStr();
-
-      const sortTasksByPriority = (tasks, status) => {
-        if (!tasks || tasks.length === 0) return [];
-
-        const activeGroup = tasks.filter(t => t.plannedDate && t.plannedDate <= today);
-        const futureGroup = tasks.filter(t => t.plannedDate && t.plannedDate > today);
-        const noDateGroup = tasks.filter(t => !t.plannedDate);
-
-        const overdueGroup = activeGroup.filter(t => t.plannedDate < today);
-        const todayGroup = activeGroup.filter(t => t.plannedDate === today);
-
-        overdueGroup.sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
-        todayGroup.sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
-        futureGroup.sort((a, b) => a.plannedDate.localeCompare(b.plannedDate));
-
-        if (sortState[status]) {
-          const sortFn = (a, b) => {
-            const dateA = a.startDate ? new Date(a.startDate) : new Date(0);
-            const dateB = b.startDate ? new Date(b.startDate) : new Date(0);
-            return sortState[status] === 'asc' ? dateA - dateB : dateB - dateA;
-          };
-          todayGroup.sort(sortFn);
-          overdueGroup.sort(sortFn);
-          futureGroup.sort(sortFn);
-          noDateGroup.sort(sortFn);
-        }
-
-        return [...todayGroup, ...overdueGroup, ...futureGroup, ...noDateGroup];
-      };
-
-      const sortedTodo = sortTasksByPriority(todoTasks, 'todo');
-      const sortedInProgress = sortTasksByPriority(inProgressTasks, 'in-progress');
-      const sortedDone = sortTasksByPriority(doneTasks, 'done');
-
-      document.getElementById('boardCountTodo').textContent = sortedTodo.length;
-      document.getElementById('boardCountInProgress').textContent = sortedInProgress.length;
-      document.getElementById('boardCountDone').textContent = sortedDone.length;
-
-      document.getElementById('boardTodoTasks').innerHTML = sortedTodo.map(task => renderTaskCard(task)).join('');
-      document.getElementById('boardInProgressTasks').innerHTML = sortedInProgress.map(task => renderTaskCard(task)).join('');
-      document.getElementById('boardDoneTasks').innerHTML = sortedDone.map(task => renderTaskCard(task)).join('');
+      var todoTasks = sortTasksByPriority(data.filter(function(t) { return t.status === 'todo'; }), 'todo');
+      var inProgressTasks = sortTasksByPriority(data.filter(function(t) { return t.status === 'in-progress'; }), 'in-progress');
+      var doneTasks = sortTasksByPriority(data.filter(function(t) { return t.status === 'done'; }), 'done');
+      document.getElementById('boardCountTodo').textContent = todoTasks.length;
+      document.getElementById('boardCountInProgress').textContent = inProgressTasks.length;
+      document.getElementById('boardCountDone').textContent = doneTasks.length;
+      document.getElementById('boardTodoTasks').innerHTML = todoTasks.map(renderTaskCard).join('');
+      document.getElementById('boardInProgressTasks').innerHTML = inProgressTasks.map(renderTaskCard).join('');
+      document.getElementById('boardDoneTasks').innerHTML = doneTasks.map(renderTaskCard).join('');
     }
 
     function renderBoardView() {
-      const data = filteredTasks.length ? filteredTasks : tasks;
-      renderBoardViewWithData(data);
+      renderBoardViewWithData(filteredTasks.length ? filteredTasks : tasks);
     }
-    
+
     function renderTaskCard(task) {
-      const assignee = users.find(u => u.userId === task.assignedTo);
-      const assigneeName = assignee ? assignee.name : 'Не назначен';
-      
-      // Приоритетная подсветка
-      let cardClass = 'task-card ' + task.status;
+      var assignee = null;
+      for (var i = 0; i < users.length; i++) {
+        if (users[i].userId === task.assignedTo) { assignee = users[i]; break; }
+      }
+      var assigneeName = assignee ? assignee.name : 'Не назначен';
+
+      var cardClass = 'task-card ' + task.status;
       if (task.plannedDate && task.status !== 'done') {
-        const today = getTodayStr();
-        const tomorrow = getDateOffsetStr(1);
-        
-        if (task.plannedDate < today) {
-          cardClass += ' planned-overdue';
-        } else if (task.plannedDate === today) {
-          cardClass += ' planned-active';
-        } else if (task.plannedDate === tomorrow) {
-          cardClass += ' planned-tomorrow';
-        }
+        var today = getTodayStr();
+        var tomorrow = getDateOffsetStr(1);
+        if (task.plannedDate < today) { cardClass += ' planned-overdue'; }
+        else if (task.plannedDate === today) { cardClass += ' planned-active'; }
+        else if (task.plannedDate === tomorrow) { cardClass += ' planned-tomorrow'; }
       }
-      
-      let plannedDateHtml = '';
+
+      var plannedDateHtml = '';
       if (task.plannedDate) {
-        const today = getTodayStr();
-        const tomorrow = getDateOffsetStr(1);
-        
+        var todayStr = getTodayStr();
+        var tomorrowStr = getDateOffsetStr(1);
         if (task.status === 'done') {
-          plannedDateHtml = `<div class="task-planned">📌 Было на: ${formatDateWithDay(task.plannedDate)}</div>`;
-        } else if (task.plannedDate < today) {
-          plannedDateHtml = `<div class="task-planned task-planned-overdue">📌 Просрочено: ${formatDate(task.plannedDate)}</div>`;
-        } else if (task.plannedDate === today) {
-          plannedDateHtml = `<div class="task-planned task-planned-today">🎯 СЕГОДНЯ!</div>`;
-        } else if (task.plannedDate === tomorrow) {
-          plannedDateHtml = `<div class="task-planned">📅 Завтра!</div>`;
+          plannedDateHtml = '<div class="task-planned">&#128204; Было на: ' + formatDateWithDay(task.plannedDate) + '</div>';
+        } else if (task.plannedDate < todayStr) {
+          plannedDateHtml = '<div class="task-planned task-planned-overdue2">&#128204; Просрочено: ' + formatDate(task.plannedDate) + '</div>';
+        } else if (task.plannedDate === todayStr) {
+          plannedDateHtml = '<div class="task-planned task-planned-today">&#127919; СЕГОДНЯ!</div>';
+        } else if (task.plannedDate === tomorrowStr) {
+          plannedDateHtml = '<div class="task-planned">&#128197; Завтра!</div>';
         } else {
-          plannedDateHtml = `<div class="task-planned">📅 ${formatDateWithDay(task.plannedDate)}</div>`;
+          plannedDateHtml = '<div class="task-planned">&#128197; ' + formatDateWithDay(task.plannedDate) + '</div>';
         }
       }
-      
-      return `
-        <div class="${cardClass}" data-id="${task.id}">
-          <div class="task-title">${escapeHtml(task.title)}</div>
-          ${plannedDateHtml}
-          <div class="task-assignee">👤 ${escapeHtml(assigneeName)}</div>
-          ${task.startDate ? `<div class="task-meta">📅 Создано: ${formatDate(task.startDate)}</div>` : ''}
-          ${task.duration ? `<div class="task-meta">⏱️ ${task.duration}</div>` : ''}
-          <div class="task-actions">
-            <button onclick="openEditTaskModal('${task.id}')">✏️</button>
-            ${task.status !== 'todo' ? '<button onclick="moveTask(\'' + task.id + '\', \'back\')">← Назад</button>' : ''}
-            ${task.status !== 'done' ? '<button onclick="moveTask(\'' + task.id + '\', \'forward\')">Вперёд →</button>' : ''}
-            <button onclick="deleteTaskById('${task.id}')" style="background: #f44336;">🗑️</button>
-          </div>
-        </div>
-      `;
+
+      return '<div class="' + cardClass + '" data-id="' + task.id + '">' +
+        '<div class="task-title">' + escapeHtml(task.title) + '</div>' +
+        plannedDateHtml +
+        '<div class="task-assignee">&#128100; ' + escapeHtml(assigneeName) + '</div>' +
+        (task.startDate ? '<div class="task-meta">&#128197; Создано: ' + formatDate(task.startDate) + '</div>' : '') +
+        (task.duration ? '<div class="task-meta">&#9201;&#65039; ' + task.duration + '</div>' : '') +
+        '<div class="task-actions">' +
+          '<button onclick="openEditTaskModal(\'' + task.id + '\')">&#9999;&#65039;</button>' +
+          (task.status !== 'todo' ? '<button onclick="moveTask(\'' + task.id + '\', \'back\')">&larr; Назад</button>' : '') +
+          (task.status !== 'done' ? '<button onclick="moveTask(\'' + task.id + '\', \'forward\')">Вперёд &rarr;</button>' : '') +
+          '<button onclick="deleteTaskById(\'' + task.id + '\')" style="background:#f44336;">&#128465;&#65039;</button>' +
+        '</div>' +
+      '</div>';
     }
-    
+
     function moveTask(taskId, direction) {
-      const task = tasks.find(t => t.id === taskId);
+      var task = null;
+      for (var i = 0; i < tasks.length; i++) {
+        if (tasks[i].id === taskId) { task = tasks[i]; break; }
+      }
       if (!task) return;
 
-      let newStatus;
+      var newStatus;
       if (direction === 'forward') {
         newStatus = task.status === 'todo' ? 'in-progress' : 'done';
       } else {
         newStatus = task.status === 'done' ? 'in-progress' : 'todo';
       }
 
-      // Оптимистичное обновление
       task.status = newStatus;
       pendingTaskIds.add(taskId);
 
-      // Обновляем UI сразу
       if (currentView === 'board') {
-        // Удаляем старую карточку
-        const oldCard = document.querySelector(`.task-card[data-id="${taskId}"]`);
-        if (oldCard) oldCard.remove();
-
-        // Рендерим новую с анимацией
-        const data = filteredTasks.length ? filteredTasks : tasks;
-        renderBoardViewWithData(data);
-
-        // Добавляем анимацию
-        const newCard = document.querySelector(`.task-card[data-id="${taskId}"]`);
+        renderBoardViewWithData(filteredTasks.length ? filteredTasks : tasks);
+        var newCard = document.querySelector('.task-card[data-id="' + taskId + '"]');
         if (newCard) {
           newCard.classList.add('syncing');
           newCard.classList.add('just-arrived');
         }
       }
 
-      // Отправляем на сервер
       apiJsonp('updateStatus', { id: taskId, status: newStatus })
-        .then(() => {
+        .then(function() {
           pendingTaskIds.delete(taskId);
-          const card = document.querySelector(`.task-card[data-id="${taskId}"]`);
+          var card = document.querySelector('.task-card[data-id="' + taskId + '"]');
           if (card) {
             card.classList.remove('syncing');
             card.classList.remove('just-arrived');
           }
         })
-        .catch(err => {
+        .catch(function(err) {
           pendingTaskIds.delete(taskId);
           alert('Ошибка при перемещении: ' + err.message);
           loadData();
         });
     }
-    
+
     function sortBoardTasks(status) {
-      if (sortState[status] === null) {
-        sortState[status] = 'asc';
-      } else if (sortState[status] === 'asc') {
-        sortState[status] = 'desc';
-      } else {
-        sortState[status] = null;
+      if (sortState[status] === null) { sortState[status] = 'asc'; }
+      else if (sortState[status] === 'asc') { sortState[status] = 'desc'; }
+      else { sortState[status] = null; }
+
+      var sortBtns = document.querySelectorAll('.sort-btn');
+      for (var i = 0; i < sortBtns.length; i++) {
+        var btn = sortBtns[i];
+        var bs = btn.dataset.status;
+        if (sortState[bs]) {
+          btn.classList.add('active');
+          btn.textContent = sortState[bs] === 'asc' ? 'Дата ↑' : 'Дата ↓';
+        } else {
+          btn.classList.remove('active');
+          btn.textContent = 'Дата↑↓';
+        }
       }
 
-      // Обновляем кнопки
-      document.querySelectorAll('.sort-btn').forEach(btn => {
-        const btnStatus = btn.dataset.status;
-        if (sortState[btnStatus]) {
-          btn.classList.add('active');
-          btn.textContent = sortState[btnStatus] === 'asc' ? '📅 ↑' : '📅 ↓';
-        } else {
-          btn.textContent = '📅↑↓';
-        }
-      });
-
       if (currentView === 'board') {
-        const data = filteredTasks.length ? filteredTasks : tasks;
-        renderBoardViewWithData(data);
+        renderBoardViewWithData(filteredTasks.length ? filteredTasks : tasks);
       }
     }
 
     // ===== Load Data =====
-    async function loadData() {
+    function loadData() {
       loadFontSettings();
       loadColumnColors();
 
-      users = await getUsers();
-      tasks = await getTasks();
-      filteredTasks = [...tasks];
-
-      populateUserFilter();
-      populateUserDropdown();
-      populateBoardFilters();
-      renderTasksTable();
-      renderUsersTable();
-      updateStats();
-
-      if (currentView === 'board') {
-        renderBoardViewWithData(filteredTasks);
-      }
+      return getUsers()
+        .then(function(loadedUsers) {
+          users = loadedUsers;
+          return getTasks();
+        })
+        .then(function(loadedTasks) {
+          tasks = loadedTasks;
+          filteredTasks = tasks.slice();
+          populateUserFilter();
+          populateUserDropdown();
+          populateBoardFilters();
+          renderTasksTable();
+          renderUsersTable();
+          updateStats();
+          if (currentView === 'board') {
+            renderBoardViewWithData(filteredTasks);
+          }
+        });
     }
 
     function startAutoRefresh() {
-      if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-      }
-      autoRefreshInterval = setInterval(async () => {
-        console.log('Auto-refreshing admin tasks...');
-        try {
-          const newTasks = await getTasks();
-          if (JSON.stringify(newTasks) !== JSON.stringify(tasks)) {
-            console.log('Tasks changed, updating admin view...');
-            tasks = newTasks;
-            filteredTasks = [...tasks];
-            applyFilters();
-            renderTasksTable();
-            updateStats();
-            if (currentView === 'board') {
-              renderBoardView();
+      if (autoRefreshInterval) { clearInterval(autoRefreshInterval); }
+      autoRefreshInterval = setInterval(function() {
+        getTasks()
+          .then(function(newTasks) {
+            if (JSON.stringify(newTasks) !== JSON.stringify(tasks)) {
+              tasks = newTasks;
+              filteredTasks = tasks.slice();
+              applyFilters();
+              renderTasksTable();
+              updateStats();
+              if (currentView === 'board') { renderBoardView(); }
             }
-          }
-        } catch (e) {
-          console.error('Auto-refresh error:', e);
-        }
+          })
+          .catch(function(e) { console.error('Auto-refresh error:', e); });
       }, AUTO_REFRESH_SECONDS * 1000);
-      console.log('Auto-refresh started (every ' + AUTO_REFRESH_SECONDS + 's)');
     }
 
     function stopAutoRefresh() {
-      if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-      }
+      if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
     }
 
     function populateUserFilter() {
-      const select = document.getElementById('filterUser');
+      var select = document.getElementById('filterUser');
       select.innerHTML = '<option value="">Все пользователи</option>';
-      
-      users.forEach(user => {
-        const option = document.createElement('option');
+      users.forEach(function(user) {
+        var option = document.createElement('option');
         option.value = user.userId;
         option.textContent = user.name + (user.role === 'admin' ? ' (Админ)' : '');
         select.appendChild(option);
@@ -2086,132 +1977,110 @@
     }
 
     function populateUserDropdown() {
-      const select = document.getElementById('taskAssignee');
+      var select = document.getElementById('taskAssignee');
       select.innerHTML = '<option value="">Выберите исполнителя...</option>';
-      
-      users.forEach(user => {
-        const option = document.createElement('option');
+      users.forEach(function(user) {
+        var option = document.createElement('option');
         option.value = user.userId;
-        option.textContent = user.name + (user.role === 'admin' ? ' 👑' : '');
+        option.textContent = user.name + (user.role === 'admin' ? ' (Админ)' : '');
         select.appendChild(option);
       });
     }
 
     // ===== Filters =====
     function applyFilters() {
-      const userId = document.getElementById('filterUser').value;
-      const status = document.getElementById('filterStatus').value;
-      const search = document.getElementById('filterSearch').value.toLowerCase();
-
-      filteredTasks = tasks.filter(task => {
+      var userId = document.getElementById('filterUser').value;
+      var status = document.getElementById('filterStatus').value;
+      var search = document.getElementById('filterSearch').value.toLowerCase();
+      filteredTasks = tasks.filter(function(task) {
         if (userId && task.assignedTo !== userId) return false;
         if (status && task.status !== status) return false;
-        if (search && !task.title.toLowerCase().includes(search)) return false;
+        if (search && task.title.toLowerCase().indexOf(search) === -1) return false;
         return true;
       });
-
-      // Синхронизируем фильтры с доской
       document.getElementById('filterUserBoard').value = userId;
       document.getElementById('filterStatusBoard').value = status;
       document.getElementById('filterSearchBoard').value = search;
-
       renderTasksTable();
       updateStats();
-      
-      if (currentView === 'board') {
-        renderBoardView();
-      }
+      if (currentView === 'board') { renderBoardView(); }
     }
 
     function resetFilters() {
       document.getElementById('filterUser').value = '';
       document.getElementById('filterStatus').value = '';
       document.getElementById('filterSearch').value = '';
-      
-      // Синхронизируем с доской
       document.getElementById('filterUserBoard').value = '';
       document.getElementById('filterStatusBoard').value = '';
       document.getElementById('filterSearchBoard').value = '';
-      
       applyFilters();
     }
 
     // ===== Stats =====
     function updateStats() {
-      const data = filteredTasks.length ? filteredTasks : tasks;
-      
+      var data = filteredTasks.length ? filteredTasks : tasks;
       document.getElementById('statTotal').textContent = data.length;
-      document.getElementById('statTodo').textContent = data.filter(t => t.status === 'todo').length;
-      document.getElementById('statInProgress').textContent = data.filter(t => t.status === 'in-progress').length;
-      document.getElementById('statDone').textContent = data.filter(t => t.status === 'done').length;
+      document.getElementById('statTodo').textContent = data.filter(function(t) { return t.status === 'todo'; }).length;
+      document.getElementById('statInProgress').textContent = data.filter(function(t) { return t.status === 'in-progress'; }).length;
+      document.getElementById('statDone').textContent = data.filter(function(t) { return t.status === 'done'; }).length;
     }
 
     // ===== Tasks Table =====
     function renderTasksTable() {
-      const tbody = document.getElementById('tasksTableBody');
-      const data = filteredTasks.length ? filteredTasks : tasks;
-
+      var tbody = document.getElementById('tasksTableBody');
+      var data = filteredTasks.length ? filteredTasks : tasks;
       if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #888;">📭 Задач пока нет</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#888;">Задач пока нет</td></tr>';
         return;
       }
-
-      let html = '';
-      data.forEach(task => {
-        const assignee = users.find(u => u.userId === task.assignedTo);
-        const statusLabels = {
-          'todo': { text: 'К выполнению', class: 'status-todo' },
-          'in-progress': { text: 'В работе', class: 'status-in-progress' },
-          'done': { text: 'Готово', class: 'status-done' }
-        };
-
-        const status = statusLabels[task.status] || { text: task.status, class: '' };
-
-        html += `
-          <tr>
-            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(task.title)}</td>
-            <td><span class="status-badge ${status.class}">${status.text}</span></td>
-            <td>${assignee ? '👤 ' + escapeHtml(assignee.name) : '—'}</td>
-            <td>${task.plannedDate ? formatDate(task.plannedDate) : '—'}</td>
-            <td>
-              <button class="action-btn btn-edit" onclick="openEditTaskModal('${task.id}')" title="Редактировать">✏️</button>
-              <button class="action-btn btn-delete" onclick="deleteTaskById('${task.id}')" title="Удалить">🗑️</button>
-            </td>
-          </tr>
-        `;
+      var statusLabels = {
+        'todo': { text: 'К выполнению', cls: 'status-todo' },
+        'in-progress': { text: 'В работе', cls: 'status-in-progress' },
+        'done': { text: 'Готово', cls: 'status-done' }
+      };
+      var html = '';
+      data.forEach(function(task) {
+        var assignee = null;
+        for (var i = 0; i < users.length; i++) {
+          if (users[i].userId === task.assignedTo) { assignee = users[i]; break; }
+        }
+        var sl = statusLabels[task.status] || { text: task.status, cls: '' };
+        html += '<tr>' +
+          '<td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(task.title) + '</td>' +
+          '<td><span class="status-badge ' + sl.cls + '">' + sl.text + '</span></td>' +
+          '<td>' + (assignee ? '&#128100; ' + escapeHtml(assignee.name) : '—') + '</td>' +
+          '<td>' + (task.plannedDate ? formatDate(task.plannedDate) : '—') + '</td>' +
+          '<td>' +
+            '<button class="action-btn btn-edit" onclick="openEditTaskModal(\'' + task.id + '\')" title="Редактировать">&#9999;&#65039;</button>' +
+            '<button class="action-btn btn-delete" onclick="deleteTaskById(\'' + task.id + '\')" title="Удалить">&#128465;&#65039;</button>' +
+          '</td>' +
+        '</tr>';
       });
-
       tbody.innerHTML = html;
     }
 
     // ===== Users Table =====
     function renderUsersTable() {
-      const tbody = document.getElementById('usersTableBody');
-
+      var tbody = document.getElementById('usersTableBody');
       if (users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: #888;">👥 Пользователей пока нет</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#888;">Пользователей пока нет</td></tr>';
         return;
       }
-
-      let html = '';
-      users.forEach(user => {
-        const taskCount = tasks.filter(t => t.assignedTo === user.userId).length;
-        const roleLabel = user.role === 'admin' ? '👑 Админ' : '👤 Пользователь';
-
-        html += `
-          <tr>
-            <td><strong>${escapeHtml(user.name)}</strong></td>
-            <td>${user.telegramId ? escapeHtml(user.telegramId) : '—'}</td>
-            <td>${roleLabel}</td>
-            <td>${taskCount}</td>
-            <td>
-              <button class="action-btn btn-edit" onclick="openEditUserModal('${user.userId}')" title="Редактировать">✏️</button>
-              <button class="action-btn btn-delete" onclick="deleteUserById('${user.userId}')" title="Удалить">🗑️</button>
-            </td>
-          </tr>
-        `;
+      var html = '';
+      users.forEach(function(user) {
+        var taskCount = tasks.filter(function(t) { return t.assignedTo === user.userId; }).length;
+        var roleLabel = user.role === 'admin' ? '&#128081; Админ' : '&#128100; Польз.';
+        html += '<tr>' +
+          '<td><strong>' + escapeHtml(user.name) + '</strong></td>' +
+          '<td>' + (user.telegramId ? escapeHtml(user.telegramId) : '—') + '</td>' +
+          '<td>' + roleLabel + '</td>' +
+          '<td>' + taskCount + '</td>' +
+          '<td>' +
+            '<button class="action-btn btn-edit" onclick="openEditUserModal(\'' + user.userId + '\')" title="Редактировать">&#9999;&#65039;</button>' +
+            '<button class="action-btn btn-delete" onclick="deleteUserById(\'' + user.userId + '\')" title="Удалить">&#128465;&#65039;</button>' +
+          '</td>' +
+        '</tr>';
       });
-
       tbody.innerHTML = html;
     }
 
@@ -2223,12 +2092,19 @@
       document.getElementById('taskAssignee').value = '';
       document.getElementById('taskStatus').value = 'todo';
       document.getElementById('taskPlannedDate').value = '';
+      document.getElementById('adminDateSelectedDisplay').textContent = '';
+      adminSelectedPlannedDays = null;
+      var btns = document.querySelectorAll('.date-quick-btn');
+      for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('active'); }
       document.getElementById('taskModal').classList.add('show');
     }
 
     function openEditTaskModal(taskId) {
       editingTaskId = taskId;
-      const task = tasks.find(t => t.id === taskId);
+      var task = null;
+      for (var i = 0; i < tasks.length; i++) {
+        if (tasks[i].id === taskId) { task = tasks[i]; break; }
+      }
       if (!task) return;
 
       document.getElementById('taskModalTitle').textContent = 'Редактирование задачи';
@@ -2236,6 +2112,7 @@
       document.getElementById('taskAssignee').value = task.assignedTo || '';
       document.getElementById('taskStatus').value = task.status || 'todo';
       document.getElementById('taskPlannedDate').value = task.plannedDate || '';
+      document.getElementById('adminDateSelectedDisplay').textContent = task.plannedDate ? formatDateWithDay(task.plannedDate) : '';
       document.getElementById('taskModal').classList.add('show');
     }
 
@@ -2245,98 +2122,59 @@
     }
 
     // ===== Date Picker Functions =====
-    let adminSelectedPlannedDays = null;
-    let adminPickerYear, adminPickerMonth;
+    var adminSelectedPlannedDays = null;
+    var adminPickerYear = null;
+    var adminPickerMonth = null;
 
-    function adminGetTodayStr() {
-      const now = new Date();
-      const y = now.getFullYear();
-      const m = String(now.getMonth() + 1).padStart(2, '0');
-      const d = String(now.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
+    function adminGetTodayStr() { return getTodayStr(); }
 
-    function adminGetDateOffsetStr(daysOffset) {
-      const date = new Date();
-      date.setDate(date.getDate() + daysOffset);
-      const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
-      return `${y}-${m}-${d}`;
-    }
+    function adminGetDateOffsetStr(daysOffset) { return getDateOffsetStr(daysOffset); }
 
     function adminGetDateOffsetStrFrom(baseStr, offsetDays) {
-      const [y, m, day] = baseStr.split('-').map(Number);
-      const d = new Date(y, m - 1, day, 12, 0, 0);
-      d.setDate(d.getDate() + offsetDays);
-      const y2 = d.getFullYear();
-      const m2 = String(d.getMonth() + 1).padStart(2, '0');
-      const d2 = String(d.getDate()).padStart(2, '0');
-      return `${y2}-${m2}-${d2}`;
-    }
-
-    function adminFormatDate(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      const date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
-      if (isNaN(date.getTime())) return '';
-      return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
-    }
-
-    function adminFormatDateWithDay(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      const date = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0);
-      if (isNaN(date.getTime())) return '';
-      return date.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+      var parts = baseStr.split('-');
+      var dt = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]), 12, 0, 0);
+      dt.setDate(dt.getDate() + offsetDays);
+      return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
     }
 
     function adminSelectPlannedDate(daysOffset) {
-      const display = document.getElementById('adminDateSelectedDisplay');
-      const btns = document.querySelectorAll('#adminDatePickerModal .date-quick-btn, .date-quick-btn[onclick^="adminSelectPlannedDate"]');
+      var display = document.getElementById('adminDateSelectedDisplay');
+      var btns = document.querySelectorAll('.date-quick-btn');
 
-      // Если уже выбрана эта дата - сбрасываем
       if (adminSelectedPlannedDays === daysOffset) {
         adminSelectedPlannedDays = null;
         display.textContent = '';
         document.getElementById('taskPlannedDate').value = '';
-        btns.forEach(b => b.classList.remove('active'));
+        for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('active'); }
         return;
       }
 
       adminSelectedPlannedDays = daysOffset;
-      const dateStr = adminGetDateOffsetStr(daysOffset);
+      var dateStr = adminGetDateOffsetStr(daysOffset);
       document.getElementById('taskPlannedDate').value = dateStr;
 
-      // Подсветка активной кнопки
-      btns.forEach(b => {
-        b.classList.remove('active');
-        const btnDays = b.getAttribute('data-days');
-        if (btnDays !== null && parseInt(btnDays) === daysOffset) {
-          b.classList.add('active');
-        }
-      });
+      for (var j = 0; j < btns.length; j++) {
+        btns[j].classList.remove('active');
+        var btnDays = btns[j].getAttribute('data-days');
+        if (btnDays !== null && parseInt(btnDays) === daysOffset) { btns[j].classList.add('active'); }
+      }
 
-      display.textContent = adminFormatDateWithDay(dateStr);
+      display.textContent = formatDateWithDay(dateStr);
     }
 
     function adminAdjustPlannedDate(offset) {
-      const display = document.getElementById('adminDateSelectedDisplay');
-      const btns = document.querySelectorAll('.date-quick-btn');
-      
-      // Сбрасываем выделение кнопок при ручной корректировке
-      btns.forEach(b => b.classList.remove('active'));
+      var display = document.getElementById('adminDateSelectedDisplay');
+      var btns = document.querySelectorAll('.date-quick-btn');
+      for (var i = 0; i < btns.length; i++) { btns[i].classList.remove('active'); }
       adminSelectedPlannedDays = null;
-      
-      const current = document.getElementById('taskPlannedDate').value || adminGetTodayStr();
-      const newDate = adminGetDateOffsetStrFrom(current, offset);
+      var current = document.getElementById('taskPlannedDate').value || adminGetTodayStr();
+      var newDate = adminGetDateOffsetStrFrom(current, offset);
       document.getElementById('taskPlannedDate').value = newDate;
-      display.textContent = adminFormatDateWithDay(newDate);
+      display.textContent = formatDateWithDay(newDate);
     }
 
     function adminToggleDatePicker() {
-      const modal = document.getElementById('adminDatePickerModal');
-      modal.classList.add('show');
+      document.getElementById('adminDatePickerModal').classList.add('show');
       adminRenderDatePicker();
     }
 
@@ -2345,34 +2183,32 @@
     }
 
     function adminRenderDatePicker() {
-      const today = adminGetTodayStr();
-      const selected = document.getElementById('taskPlannedDate').value;
+      var today = adminGetTodayStr();
+      var selected = document.getElementById('taskPlannedDate').value;
 
-      if (!adminPickerYear || !adminPickerMonth) {
-        const now = new Date();
+      if (!adminPickerYear) {
+        var now = new Date();
         adminPickerYear = now.getFullYear();
         adminPickerMonth = now.getMonth();
       }
 
       document.getElementById('adminCurrentMonthYear').textContent = new Date(adminPickerYear, adminPickerMonth).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
 
-      const firstDay = new Date(adminPickerYear, adminPickerMonth, 1);
-      const lastDay = new Date(adminPickerYear, adminPickerMonth + 1, 0);
-      const startDay = (firstDay.getDay() + 6) % 7;
-      const totalDays = lastDay.getDate();
+      var firstDay = new Date(adminPickerYear, adminPickerMonth, 1);
+      var lastDay = new Date(adminPickerYear, adminPickerMonth + 1, 0);
+      var startDay = (firstDay.getDay() + 6) % 7;
+      var totalDays = lastDay.getDate();
 
-      let html = '';
-      for (let i = 0; i < startDay; i++) {
+      var html = '';
+      for (var e = 0; e < startDay; e++) {
         html += '<div class="date-picker-day empty"></div>';
       }
-
-      for (let day = 1; day <= totalDays; day++) {
-        const dateStr = `${adminPickerYear}-${String(adminPickerMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        let classes = 'date-picker-day';
-        if (dateStr === today) classes += ' today';
-        if (dateStr === selected) classes += ' selected';
-
-        html += `<div class="${classes}" onclick="adminSelectDate('${dateStr}')">${day}</div>`;
+      for (var day = 1; day <= totalDays; day++) {
+        var dateStr = adminPickerYear + '-' + String(adminPickerMonth + 1).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+        var classes = 'date-picker-day';
+        if (dateStr === today) { classes += ' today'; }
+        if (dateStr === selected) { classes += ' selected'; }
+        html += '<div class="' + classes + '" onclick="adminSelectDate(\'' + dateStr + '\')">' + day + '</div>';
       }
 
       document.getElementById('adminDatePickerDays').innerHTML = html;
@@ -2380,25 +2216,19 @@
 
     function adminSelectDate(dateStr) {
       document.getElementById('taskPlannedDate').value = dateStr;
-      document.getElementById('adminDateSelectedDisplay').textContent = adminFormatDateWithDay(dateStr);
+      document.getElementById('adminDateSelectedDisplay').textContent = formatDateWithDay(dateStr);
       adminCloseDatePicker();
     }
 
     document.getElementById('adminPrevMonth').addEventListener('click', function() {
       adminPickerMonth--;
-      if (adminPickerMonth < 0) {
-        adminPickerMonth = 11;
-        adminPickerYear--;
-      }
+      if (adminPickerMonth < 0) { adminPickerMonth = 11; adminPickerYear--; }
       adminRenderDatePicker();
     });
 
     document.getElementById('adminNextMonth').addEventListener('click', function() {
       adminPickerMonth++;
-      if (adminPickerMonth > 11) {
-        adminPickerMonth = 0;
-        adminPickerYear++;
-      }
+      if (adminPickerMonth > 11) { adminPickerMonth = 0; adminPickerYear++; }
       adminRenderDatePicker();
     });
 
@@ -2411,48 +2241,48 @@
 
     document.getElementById('adminCloseDatePicker').addEventListener('click', adminCloseDatePicker);
 
-
-    async function saveTask() {
-      const title = document.getElementById('taskTitle').value.trim();
-      const assignedTo = document.getElementById('taskAssignee').value;
-      const status = document.getElementById('taskStatus').value;
-      const plannedDate = document.getElementById('taskPlannedDate').value;
+    function saveTask() {
+      var title = document.getElementById('taskTitle').value.trim();
+      var assignedTo = document.getElementById('taskAssignee').value;
+      var status = document.getElementById('taskStatus').value;
+      var plannedDate = document.getElementById('taskPlannedDate').value;
 
       if (!title) { alert('Введите название задачи'); return; }
       if (!assignedTo) { alert('Выберите исполнителя'); return; }
 
-      const saveBtn = document.querySelector('#taskModal .modal-btn-save');
-      const originalBtnText = saveBtn.textContent;
-      saveBtn.textContent = '⏳ Сохранение...';
+      var saveBtn = document.querySelector('#taskModal .modal-btn-save');
+      var originalBtnText = saveBtn.textContent;
+      saveBtn.textContent = 'Сохранение...';
       saveBtn.disabled = true;
       saveBtn.style.opacity = '0.7';
 
-      try {
-        if (editingTaskId) {
-          await updateTask(editingTaskId, { title, assignedTo, status, plannedDate });
-        } else {
-          await addTask(title, plannedDate, assignedTo, status);
-        }
-
-        closeTaskModal();
-        await loadData();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      } finally {
-        saveBtn.textContent = originalBtnText;
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = '1';
+      var promise;
+      if (editingTaskId) {
+        promise = updateTask(editingTaskId, { title: title, assignedTo: assignedTo, status: status, plannedDate: plannedDate });
+      } else {
+        promise = addTask(title, plannedDate, assignedTo, status);
       }
+
+      promise
+        .then(function() {
+          closeTaskModal();
+          return loadData();
+        })
+        .catch(function(e) {
+          alert('Ошибка: ' + e.message);
+        })
+        .then(function() {
+          saveBtn.textContent = originalBtnText;
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = '1';
+        });
     }
 
-    async function deleteTaskById(taskId) {
+    function deleteTaskById(taskId) {
       if (!confirm('Вы уверены, что хотите удалить эту задачу?')) return;
-      try {
-        await deleteTask(taskId);
-        await loadData();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      }
+      deleteTask(taskId)
+        .then(function() { return loadData(); })
+        .catch(function(e) { alert('Ошибка: ' + e.message); });
     }
 
     // ===== User Modal =====
@@ -2467,9 +2297,11 @@
 
     function openEditUserModal(userId) {
       editingUserId = userId;
-      const user = users.find(u => u.userId === userId);
+      var user = null;
+      for (var i = 0; i < users.length; i++) {
+        if (users[i].userId === userId) { user = users[i]; break; }
+      }
       if (!user) return;
-
       document.getElementById('userModalTitle').textContent = 'Редактирование пользователя';
       document.getElementById('userName').value = user.name || '';
       document.getElementById('userTelegram').value = user.telegramId || '';
@@ -2482,142 +2314,133 @@
       editingUserId = null;
     }
 
-    async function saveUser() {
-      const name = document.getElementById('userName').value.trim();
-      const telegramId = document.getElementById('userTelegram').value.trim();
-      const role = document.getElementById('userRole').value;
-
+    function saveUser() {
+      var name = document.getElementById('userName').value.trim();
+      var telegramId = document.getElementById('userTelegram').value.trim();
+      var role = document.getElementById('userRole').value;
       if (!name) { alert('Введите имя'); return; }
 
-      const saveBtn = document.querySelector('#userModal .modal-btn-save');
-      const originalBtnText = saveBtn.textContent;
-      saveBtn.textContent = '⏳ Сохранение...';
+      var saveBtn = document.querySelector('#userModal .modal-btn-save');
+      var originalBtnText = saveBtn.textContent;
+      saveBtn.textContent = 'Сохранение...';
       saveBtn.disabled = true;
       saveBtn.style.opacity = '0.7';
 
-      try {
-        if (editingUserId) {
-          await updateUser(editingUserId, name, telegramId, role);
-        } else {
-          await addUser(name, telegramId, role);
-        }
-
-        closeUserModal();
-        await loadData();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      } finally {
-        saveBtn.textContent = originalBtnText;
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = '1';
+      var promise;
+      if (editingUserId) {
+        promise = updateUser(editingUserId, name, telegramId, role);
+      } else {
+        promise = addUser(name, telegramId, role);
       }
+
+      promise
+        .then(function() {
+          closeUserModal();
+          return loadData();
+        })
+        .catch(function(e) {
+          alert('Ошибка: ' + e.message);
+        })
+        .then(function() {
+          saveBtn.textContent = originalBtnText;
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = '1';
+        });
     }
 
-    async function deleteUserById(userId) {
+    function deleteUserById(userId) {
       if (!confirm('Вы уверены, что хотите удалить этого пользователя?')) return;
-      try {
-        await deleteUser(userId);
-        await loadData();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      }
+      deleteUser(userId)
+        .then(function() { return loadData(); })
+        .catch(function(e) { alert('Ошибка: ' + e.message); });
     }
 
     // ===== Event Listeners =====
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
-        const taskModal = document.getElementById('taskModal');
-        const userModal = document.getElementById('userModal');
-        if (taskModal.classList.contains('show')) closeTaskModal();
-        if (userModal.classList.contains('show')) closeUserModal();
+        var taskModal = document.getElementById('taskModal');
+        var userModal = document.getElementById('userModal');
+        if (taskModal.classList.contains('show')) { closeTaskModal(); }
+        if (userModal.classList.contains('show')) { closeUserModal(); }
       }
     });
 
     document.getElementById('taskModal').addEventListener('click', function(e) {
-      if (e.target === this) closeTaskModal();
+      if (e.target === this) { closeTaskModal(); }
     });
 
     document.getElementById('userModal').addEventListener('click', function(e) {
-      if (e.target === this) closeUserModal();
+      if (e.target === this) { closeUserModal(); }
     });
 
     // ===== Initialization =====
-    async function init() {
-      await loadData();
-      loadSavedView();
-      startAutoRefresh();
+    function init() {
+      return loadData().then(function() {
+        loadSavedView();
+        startAutoRefresh();
+      });
     }
 
-    window.addEventListener('beforeunload', () => {
-      stopAutoRefresh();
-    });
+    window.addEventListener('beforeunload', function() { stopAutoRefresh(); });
 
     // ===== Recurring Tasks =====
-    let recurringTasks = [];
-    let editingRecurringId = null;
+    var recurringTasks = [];
+    var editingRecurringId = null;
 
-    async function loadRecurringTasks() {
-      try {
-        const result = await apiJsonp('getRecurringTasks');
-        recurringTasks = Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
-        console.log('Recurring tasks loaded:', recurringTasks);
-        recurringTasks.forEach(t => console.log('Task:', t.title, 'nextDueDate:', t.nextDueDate));
-        renderRecurringTasks();
-      } catch (e) {
-        console.error('loadRecurringTasks error:', e);
-      }
+    function loadRecurringTasks() {
+      apiJsonp('getRecurringTasks')
+        .then(function(result) {
+          recurringTasks = Array.isArray(result) ? result : (result.ok ? (result.data || []) : []);
+          renderRecurringTasks();
+        })
+        .catch(function(e) {
+          console.error('loadRecurringTasks error:', e);
+        });
     }
 
     function renderRecurringTasks() {
-      const tbody = document.getElementById('recurringTasksBody');
+      var tbody = document.getElementById('recurringTasksBody');
       if (!tbody) return;
-
       if (recurringTasks.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:40px;color:#888;">📭 Нет циклических задач</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:#888;">Нет циклических задач</td></tr>';
         return;
       }
-
-      tbody.innerHTML = recurringTasks.map(task => {
-        const assignee = users.find(u => u.userId === task.assignedTo);
-        const periodText = formatPeriod(task.recurrenceInterval, task.recurrenceType);
-        const nextDate = task.nextDueDate ? formatDateWithDay(task.nextDueDate) : 'Не назначена';
-        const isPaused = task.isPaused;
-
-        return `
-          <tr style="${isPaused ? 'opacity: 0.6; background: #f9f9f9;' : ''}">
-            <td>${escapeHtml(task.title)} ${isPaused ? '<span style="background:#ffc107;color:#000;padding:2px 8px;border-radius:4px;font-size:12px;margin-left:8px;">⏸️ На паузе</span>' : ''}</td>
-            <td>🔄 ${periodText}</td>
-            <td>📅 ${nextDate}</td>
-            <td>👤 ${assignee ? assignee.name : 'Не назначен'}</td>
-            <td>
-              <button class="action-btn btn-edit" onclick="openEditRecurringModal('${task.id}')" title="Редактировать">✏️</button>
-              ${isPaused 
-                ? `<button class="action-btn" style="background:#e3f2fd;color:#2196f3;" onclick="resumeRecurringTask('${task.id}')" title="Продолжить">▶️</button>`
-                : `<button class="action-btn" style="background:#fff3e0;color:#ff9800;" onclick="pauseRecurringTask('${task.id}')" title="На паузу">⏸️</button>`
-              }
-              <button class="action-btn btn-delete" onclick="removeRecurringTask('${task.id}')" title="Удалить цикличность">✕</button>
-            </td>
-          </tr>
-        `;
-      }).join('');
+      var html = '';
+      recurringTasks.forEach(function(task) {
+        var assignee = null;
+        for (var i = 0; i < users.length; i++) {
+          if (users[i].userId === task.assignedTo) { assignee = users[i]; break; }
+        }
+        var periodText = formatPeriod(task.recurrenceInterval, task.recurrenceType);
+        var nextDate = task.nextDueDate ? formatDateWithDay(task.nextDueDate) : 'Не назначена';
+        var isPaused = task.isPaused;
+        html += '<tr style="' + (isPaused ? 'opacity:0.6;background:#f9f9f9;' : '') + '">' +
+          '<td>' + escapeHtml(task.title) + (isPaused ? ' <span style="background:#ffc107;color:#000;padding:2px 8px;border-radius:4px;font-size:12px;margin-left:8px;">На паузе</span>' : '') + '</td>' +
+          '<td>' + periodText + '</td>' +
+          '<td>' + nextDate + '</td>' +
+          '<td>' + (assignee ? assignee.name : 'Не назначен') + '</td>' +
+          '<td>' +
+            '<button class="action-btn btn-edit" onclick="openEditRecurringModal(\'' + task.id + '\')" title="Редактировать">&#9999;&#65039;</button>' +
+            (isPaused
+              ? '<button class="action-btn" style="background:#e3f2fd;color:#2196f3;" onclick="resumeRecurringTask(\'' + task.id + '\')" title="Продолжить">&#9654;&#65039;</button>'
+              : '<button class="action-btn" style="background:#fff3e0;color:#ff9800;" onclick="pauseRecurringTask(\'' + task.id + '\')" title="На паузу">&#9208;&#65039;</button>'
+            ) +
+            '<button class="action-btn btn-delete" onclick="removeRecurringTask(\'' + task.id + '\')" title="Удалить">&#215;</button>' +
+          '</td>' +
+        '</tr>';
+      });
+      tbody.innerHTML = html;
     }
 
     function formatPeriod(interval, type) {
-      const types = {
-        'days': 'дн.',
-        'weeks': 'нед.',
-        'months': 'мес.',
-        'years': 'лет'
-      };
-
-      const n = parseInt(interval);
-      const text = types[type] || type;
-
+      var types = { 'days': 'дн.', 'weeks': 'нед.', 'months': 'мес.', 'years': 'лет' };
+      var n = parseInt(interval);
+      var text = types[type] || type;
       if (n === 1) {
-        return `Каждый ${text === 'лет' ? 'год' : text === 'мес.' ? 'месяц' : text === 'нед.' ? 'месяц' : 'день'}`;
+        var map = { 'лет': 'год', 'мес.': 'месяц', 'нед.': 'неделю', 'дн.': 'день' };
+        return 'Каждый ' + (map[text] || text);
       }
-
-      return `Каждые ${n} ${text}`;
+      return 'Каждые ' + n + ' ' + text;
     }
 
     function openAddRecurringModal() {
@@ -2629,36 +2452,39 @@
       document.getElementById('recurringType').value = 'months';
       document.getElementById('recurringNextDate').value = getNowDatetimeLocal();
 
-      // Заполнить исполнителей
-      const select = document.getElementById('recurringAssignee');
-      select.innerHTML = '<option value="">Выберите исполнителя...</option>' +
-        users.map(u => `<option value="${u.userId}">${u.name}</option>`).join('');
+      var select = document.getElementById('recurringAssignee');
+      var optHtml = '<option value="">Выберите исполнителя...</option>';
+      users.forEach(function(u) {
+        optHtml += '<option value="' + u.userId + '">' + escapeHtml(u.name) + '</option>';
+      });
+      select.innerHTML = optHtml;
 
       document.getElementById('recurringModal').classList.add('show');
     }
 
     function openEditRecurringModal(taskId) {
       editingRecurringId = taskId;
-      const task = recurringTasks.find(t => t.id === taskId);
+      var task = null;
+      for (var i = 0; i < recurringTasks.length; i++) {
+        if (recurringTasks[i].id === taskId) { task = recurringTasks[i]; break; }
+      }
       if (!task) return;
 
       document.getElementById('recurringModalTitle').textContent = 'Редактирование циклической задачи';
       document.getElementById('recurringTitle').value = task.title;
-      document.getElementById('recurringAssignee').value = task.assignedTo;
       document.getElementById('recurringInterval').value = task.recurrenceInterval;
       document.getElementById('recurringType').value = task.recurrenceType;
-      
-      // Конвертируем дату в формат datetime-local если нужно
-      let nextDateVal = task.nextDueDate || '';
-      if (nextDateVal && !nextDateVal.includes('T')) {
-        nextDateVal = nextDateVal + 'T00:00';
-      }
+
+      var nextDateVal = task.nextDueDate || '';
+      if (nextDateVal && nextDateVal.indexOf('T') === -1) { nextDateVal = nextDateVal + 'T00:00'; }
       document.getElementById('recurringNextDate').value = nextDateVal;
 
-      // Заполнить исполнителей
-      const select = document.getElementById('recurringAssignee');
-      select.innerHTML = '<option value="">Выберите исполнителя...</option>' +
-        users.map(u => `<option value="${u.userId}">${u.name}</option>`).join('');
+      var select = document.getElementById('recurringAssignee');
+      var optHtml = '<option value="">Выберите исполнителя...</option>';
+      users.forEach(function(u) {
+        optHtml += '<option value="' + u.userId + '"' + (u.userId === task.assignedTo ? ' selected' : '') + '>' + escapeHtml(u.name) + '</option>';
+      });
+      select.innerHTML = optHtml;
 
       document.getElementById('recurringModal').classList.add('show');
     }
@@ -2668,88 +2494,86 @@
       editingRecurringId = null;
     }
 
-    async function saveRecurringTask() {
-      const title = document.getElementById('recurringTitle').value.trim();
-      const assignedTo = document.getElementById('recurringAssignee').value;
-      const interval = document.getElementById('recurringInterval').value;
-      const type = document.getElementById('recurringType').value;
-      const nextDate = document.getElementById('recurringNextDate').value;
+    function saveRecurringTask() {
+      var title = document.getElementById('recurringTitle').value.trim();
+      var assignedTo = document.getElementById('recurringAssignee').value;
+      var interval = document.getElementById('recurringInterval').value;
+      var type = document.getElementById('recurringType').value;
+      var nextDate = document.getElementById('recurringNextDate').value;
 
       if (!title) { alert('Введите название задачи'); return; }
       if (!assignedTo) { alert('Выберите исполнителя'); return; }
       if (!interval || interval < 1) { alert('Укажите период'); return; }
       if (!nextDate) { alert('Укажите дату'); return; }
 
-      const saveBtn = document.querySelector('#recurringModal .modal-btn-save');
-      const originalBtnText = saveBtn.textContent;
-      saveBtn.textContent = '⏳ Сохранение...';
+      var saveBtn = document.querySelector('#recurringModal .modal-btn-save');
+      var origText = saveBtn.textContent;
+      saveBtn.textContent = 'Сохранение...';
       saveBtn.disabled = true;
       saveBtn.style.opacity = '0.7';
 
-      try {
-        if (editingRecurringId) {
-          await apiJsonp('updateRecurringTask', {
-            id: editingRecurringId,
-            title: title,
-            assignedTo: assignedTo,
-            recurrenceInterval: interval,
-            recurrenceType: type,
-            nextDueDate: nextDate
-          });
-        } else {
-          await apiJsonp('addTask', {
-            title: title,
-            assignedTo: assignedTo,
-            recurrenceInterval: interval,
-            recurrenceType: type,
-            nextDueDate: nextDate,
-            isRecurring: true
-          });
-        }
-
-        closeRecurringModal();
-        loadRecurringTasks();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      } finally {
-        saveBtn.textContent = originalBtnText;
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = '1';
+      var promise;
+      if (editingRecurringId) {
+        promise = apiJsonp('updateRecurringTask', {
+          id: editingRecurringId,
+          title: title,
+          assignedTo: assignedTo,
+          recurrenceInterval: interval,
+          recurrenceType: type,
+          nextDueDate: nextDate
+        });
+      } else {
+        promise = apiJsonp('addTask', {
+          title: title,
+          assignedTo: assignedTo,
+          recurrenceInterval: interval,
+          recurrenceType: type,
+          nextDueDate: nextDate,
+          isRecurring: true
+        });
       }
+
+      promise
+        .then(function() {
+          closeRecurringModal();
+          loadRecurringTasks();
+        })
+        .catch(function(e) {
+          alert('Ошибка: ' + e.message);
+        })
+        .then(function() {
+          saveBtn.textContent = origText;
+          saveBtn.disabled = false;
+          saveBtn.style.opacity = '1';
+        });
     }
 
-    async function removeRecurringTask(taskId) {
-      if (!confirm('Удалить эту циклическую задачу полностью? Все будущие срабатывания будут отменены.')) return;
-
-      try {
-        const result = await apiJsonp('deleteRecurringTask', { id: taskId });
-        if (result && result.ok) {
-          alert('Задача удалена');
-        } else {
-          alert('Ошибка: ' + (result?.error || 'Неизвестная ошибка'));
-        }
-        loadRecurringTasks();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      }
+    function removeRecurringTask(taskId) {
+      if (!confirm('Удалить эту циклическую задачу полностью?')) return;
+      apiJsonp('deleteRecurringTask', { id: taskId })
+        .then(function(result) {
+          if (result && result.ok) { alert('Задача удалена'); }
+          else {
+            var errMsg = (result && result.error) ? result.error : 'Неизвестная ошибка';
+            alert('Ошибка: ' + errMsg);
+          }
+          loadRecurringTasks();
+        })
+        .catch(function(e) {
+          alert('Ошибка: ' + e.message);
+        });
     }
 
-    async function pauseRecurringTask(taskId) {
-      try {
-        await apiJsonp('pauseRecurringTask', { id: taskId });
-        loadRecurringTasks();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      }
+    function pauseRecurringTask(taskId) {
+      apiJsonp('pauseRecurringTask', { id: taskId })
+        .then(function() { loadRecurringTasks(); })
+        .catch(function(e) { alert('Ошибка: ' + e.message); });
     }
 
-    async function resumeRecurringTask(taskId) {
-      try {
-        await apiJsonp('resumeRecurringTask', { id: taskId });
-        loadRecurringTasks();
-      } catch (e) {
-        alert('Ошибка: ' + e.message);
-      }
+    function resumeRecurringTask(taskId) {
+      apiJsonp('resumeRecurringTask', { id: taskId })
+        .then(function() { loadRecurringTasks(); })
+        .catch(function(e) { alert('Ошибка: ' + e.message); });
     }
 
     init();
