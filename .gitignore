@@ -1,15 +1,2 @@
-# Dependencies
-node_modules/
-
-# macOS
 .DS_Store
-*.DS_Store
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Babel config (if used later)
-.babelrc
+пример/
