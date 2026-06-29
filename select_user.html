@@ -2,8 +2,19 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
   <meta name="theme-color" content="#667eea" />
+
+  <!-- PWA: установка на главный экран -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="icon-192.png" />
+  <!-- iOS / iPadOS: «Добавить на экран Домой» как отдельное приложение -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Kanban" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+
   <title>Kanban v2 - Google Sheets</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -785,7 +796,15 @@ function saveUser() {
     }
 
     init();
-    alert('script loaded');
+
+    // PWA: регистрация service worker (оффлайн-режим + установка на главный экран)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function (err) {
+          console.warn('SW registration failed:', err);
+        });
+      });
+    }
   </script>
 </body>
 </html>
